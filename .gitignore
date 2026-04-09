@@ -27,7 +27,7 @@ venv/
 
 data/raw/
 # data/processed/
-*.parquet
+# *.parquet
 *.csv
 
 # ==================================================
