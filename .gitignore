@@ -1,0 +1,126 @@
+# ==================================================
+
+# PYTHON
+
+# ==================================================
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+
+venv/
+.env/
+.env.*
+.venv/
+
+# Jupyter
+
+.ipynb_checkpoints/
+
+# ==================================================
+
+# DATA (CRITICAL — DO NOT COMMIT)
+
+# ==================================================
+
+data/raw/
+data/processed/
+*.parquet
+*.csv
+
+# ==================================================
+
+# OUTPUTS / ARTIFACTS
+
+# ==================================================
+
+plots/
+figures/
+archive/
+
+# Generated images / exports
+
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+*.html
+
+# ==================================================
+
+# STREAMLIT
+
+# ==================================================
+
+.streamlit/
+.streamlit/secrets.toml
+
+# ==================================================
+
+# IDE / EDITOR
+
+# ==================================================
+
+# VSCode
+
+.vscode/
+
+# PyCharm
+
+.idea/
+
+# Mac
+
+.DS_Store
+
+# Windows
+
+Thumbs.db
+
+# ==================================================
+
+# LOGS / TEMP
+
+# ==================================================
+
+*.log
+*.tmp
+*.bak
+
+# ==================================================
+
+# PYTHON BUILD / DIST
+
+# ==================================================
+
+build/
+dist/
+*.egg-info/
+
+# ==================================================
+
+# CACHE / TEST
+
+# ==================================================
+
+.pytest_cache/
+.mypy_cache/
+
+# ==================================================
+
+# OPTIONAL: KEEP STRUCTURE BUT IGNORE CONTENTS
+
+# (Uncomment if you want empty dirs tracked)
+
+# ==================================================
+
+# !data/raw/.gitkeep
+
+# !data/processed/.gitkeep
+
+# !plots/.gitkeep
+
+# !figures/.gitkeep
