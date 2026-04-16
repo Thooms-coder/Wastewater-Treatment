@@ -1159,6 +1159,61 @@ def render_report_highlights(master_df, events_table, event_metrics_df):
     )
 
 
+def render_variable_glossary():
+    glossary_sections = {
+        "Core odor signals": [
+            ("`nh3_roll_mean_15min`", "15-minute rolling average of NH3. This smooths short-term noise and is the main NH3 series used in the dashboard."),
+            ("`h2s_roll_max_15min`", "15-minute rolling maximum of H2S. This preserves short spikes and is the main H2S series used in the dashboard."),
+            ("`nh3_nh3_ppm` / `h2s_h2s_ppm`", "Raw NH3 and H2S sensor readings in ppm."),
+            ("`nh3_temperature_°f` / `h2s_temperature_°f`", "Sensor temperatures in degrees Fahrenheit."),
+        ],
+        "Rolling and lag features": [
+            ("`roll_mean`", "Average over the last N minutes. Use it when you want the local typical level rather than point-to-point noise."),
+            ("`roll_max`", "Maximum over the last N minutes. Use it when short peaks matter more than the average."),
+            ("`lag_5min`, `lag_15min`, `lag_30min`, `lag_60min`", "The same signal shifted backward in time, used for time-history and predictive features."),
+        ],
+        "Flow and load variables": [
+            ("`total_gpm`", "Total sludge/process flow in gallons per minute, summed across the main flow columns."),
+            ("`lbs_per_min`", "Estimated volatile load transferred per minute, derived from flow using the project conversion factor."),
+            ("`transferred_lbs_vol`", "Dashboard alias for `lbs_per_min`, mainly used in load-context charts."),
+            ("`transferred_lbs_vol_daily`", "Daily total of minute-level transferred load."),
+            ("`nh3_per_lb` / `h2s_per_lb`", "Odor signal normalized by load, used to compare intensity relative to throughput."),
+        ],
+        "Coverage and variability": [
+            ("`n_obs_nh3`, `n_obs_h2s`, `n_obs_water`", "Number of non-missing observations available that day."),
+            ("`nh3_coverage`, `h2s_coverage`, `water_coverage`", "Fraction of expected daily readings present. Higher coverage means more trustworthy summaries."),
+            ("`nh3_std` / `h2s_std`", "Daily standard deviation, used as a simple measure of within-day variability."),
+        ],
+        "Chemistry and events": [
+            ("`ferric_available` / `hcl_available`", "Binary flags indicating whether Ferric or HCl was active/available at that time."),
+            ("`ferric_active_lbs_per_day`", "Estimated active ferric dose level per day when available in the data."),
+            ("`Ferric_ON`, `Ferric_OFF`, `HCl_ON`, `HCl_OFF`", "Transition events detected when the binary chemistry flags switch on or off."),
+        ],
+        "Event-study metrics": [
+            ("`baseline`", "Typical pre-event level in the baseline window."),
+            ("`post`", "Typical post-event level in the post window."),
+            ("`delta`", "`post - baseline`. Negative means the signal fell after the event."),
+            ("`percent_change`", "Percent change from baseline to post."),
+            ("`time_to_min`", "Minutes after the event until the minimum post-event value is reached."),
+            ("`persistence`", "How long the signal stayed below baseline after the event."),
+            ("`post_iqr`", "Post-event spread, measured as the interquartile range."),
+        ],
+    }
+
+    for section, items in glossary_sections.items():
+        st.markdown(f"**{section}**")
+        for term, explanation in items:
+            st.markdown(f"- {term}: {explanation}")
+
+
+def render_help_tip(text):
+    if hasattr(st, "popover"):
+        with st.popover("? Help"):
+            st.write(text)
+    else:
+        st.caption(f"Help: {text}")
+
+
 def render_section_intro(title, description):
     st.markdown(
         f"""
@@ -1336,6 +1391,12 @@ with st.sidebar.expander("Quick stats", expanded=False):
     if daily_df is not None and not daily_df.empty:
         st.write(f"Daily rows: {len(daily_df):,}")
 
+with st.sidebar.expander("Variable glossary", expanded=False):
+    st.caption(
+        "Plain-English definitions for the main dashboard variables and event-study metrics."
+    )
+    render_variable_glossary()
+
 
 # --------------------------------------------------
 # OVERVIEW
@@ -1362,6 +1423,7 @@ if page == "Executive Brief":
         "Key Performance Snapshot",
         "Use these cards as the boardroom summary: current window size, odor levels, operating load, transition activity, and confidence in the underlying sensor coverage.",
     )
+    render_help_tip("NH3 uses a 15-minute rolling average, while H2S uses a 15-minute rolling maximum, so the two headline odor values summarize behavior differently.")
     render_executive_cards(
         [
             {
@@ -1420,6 +1482,7 @@ if page == "Executive Brief":
         st.caption(
             "Select the pairing you want to use as the lead visual in the reporting narrative."
         )
+        render_help_tip("Use `total_gpm` or `transferred_lbs_vol` when you want to compare odor against process load. Use temperature when you want sensor or environmental context.")
         primary_left = st.selectbox("Primary signal", top_cols, index=0)
         primary_right = st.selectbox("Secondary signal", top_cols, index=min(1, len(top_cols)-1))
         fig = dual_axis_figure(
@@ -1441,10 +1504,12 @@ if page == "Executive Brief":
     with c1:
         st.subheader("Detected events")
         st.markdown('<div class="table-caption">Chronological transition timestamps inside the active filter window.</div>', unsafe_allow_html=True)
+        render_help_tip("An ON event means the chemistry flag switched from 0 to 1. An OFF event means it switched from 1 to 0.")
         st.dataframe(events_table, use_container_width=True, height=260)
     with c2:
         st.subheader("Event response summary")
         st.markdown('<div class="table-caption">Aggregated pre/post effect metrics computed from matching transitions in the active window.</div>', unsafe_allow_html=True)
+        render_help_tip("`delta` is post minus baseline. `percent_change` rescales that difference relative to the baseline. `persistence` is how long the signal stayed below baseline after the event.")
         show_cols = [
             c for c in ["chemical", "event_type", "signal", "delta", "percent_change", "time_to_min", "persistence", "post_iqr", "n_events"]
             if c in event_metrics_df.columns
@@ -1474,6 +1539,7 @@ elif page == "Operations Review":
         "Interactive Timeline Builder",
         "Adjust resolution and signal pairing to match the scale of the question. Short spikes, hourly context, and longer trends should not be read from the same view.",
     )
+    render_help_tip("Choose `1-minute` for short spikes, `1-hour` for operating context, and `Daily` for management-level trend summaries.")
     resolution = st.radio("Resolution", ["1-minute", "1-hour", "Daily"], horizontal=True)
     if resolution == "1-minute":
         active_df = master_df
@@ -1528,6 +1594,7 @@ elif page == "Operations Review":
         "Single Transition Inspection",
         "Use this section when leadership needs a concrete before-and-after view around one specific Ferric or HCl event rather than a full-window trend.",
     )
+    render_help_tip("The vertical marker at minute 0 is the event time. Negative values are pre-event; positive values are post-event.")
     event_family = st.selectbox("Event family", list(EVENT_COLUMNS.keys()), key="ops_event_family")
     event_direction = st.radio("Transition", ["ON", "OFF"], horizontal=True, key="ops_event_direction")
     signal_mode = st.radio(
@@ -1562,6 +1629,7 @@ elif page == "Operations Review":
         "Repeated Event Response",
         "This view summarizes whether similar transitions tend to produce a repeatable odor response across the reporting window.",
     )
+    render_help_tip("The median line shows the typical aligned response across events. The shaded band shows event-to-event spread.")
     s1, s2, s3 = st.columns(3)
     chem = s1.selectbox("Chemical", list(EVENT_COLUMNS.keys()), key="ops_study_chem")
     event_type = s2.selectbox("Event type", ["ON", "OFF"], key="ops_study_type")
@@ -1842,6 +1910,7 @@ elif page == "Performance & Coverage":
         "Compressed Views",
         "Switch here when the minute-level timeline is too granular and you need daily structure, seasonal shape, weekday patterns, or a direct read on missingness.",
     )
+    render_help_tip("Coverage charts tell you how much data was actually present. Low coverage can make averages and event summaries look more certain than they are.")
 
     tabs = st.tabs(["Daily", "Monthly", "Weekday", "Coverage"])
 
@@ -1887,6 +1956,7 @@ elif page == "Performance & Coverage":
         "Relationship Screening",
         "Use the correlation matrix and scatter view to support a performance narrative with simple relationship checks between odor, throughput, and operating context.",
     )
+    render_help_tip("Correlation shows linear association, not causation. Use the scatter plot to check whether the relationship is real, clustered, or driven by a few extreme points.")
     analysis_df = daily_df.copy() if daily_df is not None else master_df.resample("1D").mean(numeric_only=True)
     analysis_df = analysis_df.copy()
     numeric_cols = [c for c in analysis_df.columns if pd.api.types.is_numeric_dtype(analysis_df[c])]
@@ -1983,6 +2053,7 @@ elif page == "Diagnostics & Data":
         "Rolling Surprise Detection",
         "This workflow highlights local departures from recent history. It is useful for investigation triage, but the flags still need process context before they mean anything operationally.",
     )
+    render_help_tip("A larger rolling window gives a slower-moving baseline. A higher z-score threshold shows only more extreme departures.")
     candidates = available_columns(master_df, [NH3, H2S, RAW_NH3, RAW_H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min", "nh3_per_lb", "h2s_per_lb"])
     target_col = st.selectbox("Signal", candidates)
     window = st.slider("Rolling window (minutes)", min_value=60, max_value=4320, value=1440, step=60)
@@ -2018,6 +2089,7 @@ elif page == "Diagnostics & Data":
         "Filtered Data Explorer",
         "Use the table view when a chart raises a question and you need to inspect underlying rows, sort extremes, or export a supporting appendix.",
     )
+    render_help_tip("Use sorting to bring the highest values to the top, then narrow columns to only the fields needed for review or export.")
     dataset_name = st.selectbox(
         "Dataset",
         ["master_1min", "master_1h", "master_daily", "monthly_summary", "weekday_summary", "event_metrics"],
