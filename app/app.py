@@ -76,6 +76,157 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+        --bg: #f3f1ea;
+        --panel: rgba(255, 252, 245, 0.9);
+        --panel-strong: #fffdf7;
+        --ink: #18231f;
+        --muted: #5d6b66;
+        --line: rgba(24, 35, 31, 0.11);
+        --accent: #1f6a53;
+        --accent-soft: rgba(31, 106, 83, 0.1);
+        --warn: #8b5e1a;
+        --shadow: 0 18px 42px rgba(31, 38, 35, 0.08);
+        --radius: 18px;
+    }
+
+    html, body, [class*="css"]  {
+        font-family: "IBM Plex Sans", sans-serif;
+        color: var(--ink);
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at top left, rgba(31, 106, 83, 0.12), transparent 28%),
+            radial-gradient(circle at top right, rgba(139, 94, 26, 0.08), transparent 24%),
+            linear-gradient(180deg, #f8f5ee 0%, var(--bg) 100%);
+    }
+
+    [data-testid="stSidebar"] {
+        background:
+            linear-gradient(180deg, rgba(18, 43, 35, 0.98) 0%, rgba(32, 64, 52, 0.96) 100%);
+        border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #eef6f1;
+    }
+
+    [data-testid="stSidebar"] .stCaption {
+        color: rgba(238, 246, 241, 0.78);
+    }
+
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.04);
+    }
+
+    [data-testid="stMetric"] {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 0.9rem 1rem;
+        box-shadow: var(--shadow);
+    }
+
+    [data-testid="stDataFrame"], [data-testid="stPlotlyChart"], [data-testid="stExpander"] {
+        border-radius: var(--radius);
+    }
+
+    div[data-testid="stMarkdownContainer"] p code {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.92em;
+        background: rgba(24, 35, 31, 0.06);
+        padding: 0.12rem 0.34rem;
+        border-radius: 6px;
+    }
+
+    .app-shell {
+        padding-bottom: 0.75rem;
+    }
+
+    .app-hero {
+        background:
+            linear-gradient(135deg, rgba(255,253,247,0.96) 0%, rgba(245, 247, 242, 0.94) 100%);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 1.35rem 1.4rem 1.2rem 1.4rem;
+        box-shadow: var(--shadow);
+        margin: 0.15rem 0 1rem 0;
+    }
+
+    .app-kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.35rem;
+    }
+
+    .app-title {
+        font-size: 2.2rem;
+        line-height: 1.02;
+        font-weight: 700;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .app-subtitle {
+        margin-top: 0.55rem;
+        max-width: 70ch;
+        font-size: 1rem;
+        line-height: 1.55;
+        color: var(--muted);
+    }
+
+    .page-note {
+        background: linear-gradient(180deg, rgba(255, 251, 241, 0.98) 0%, rgba(253, 248, 238, 0.96) 100%);
+        border: 1px solid rgba(139, 94, 26, 0.18);
+        border-left: 6px solid var(--warn);
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+        margin: 0.5rem 0 1rem 0;
+        box-shadow: var(--shadow);
+    }
+
+    .page-note-title {
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--warn);
+        margin-bottom: 0.45rem;
+    }
+
+    .page-note p {
+        color: #473923;
+        line-height: 1.58;
+        margin: 0.35rem 0;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 0.28rem 0.6rem;
+        margin: 0.1rem 0.45rem 0.3rem 0;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(31, 106, 83, 0.14);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # --------------------------------------------------
 # LOADERS
@@ -405,6 +556,162 @@ def coverage_value(df, col, expected_points):
     return f"{pct:.1f}%"
 
 
+def render_page_header(title, subtitle, kicker="Wastewater Treatment"):
+    st.markdown(
+        f"""
+        <div class="app-shell">
+            <div class="app-hero">
+                <div class="app-kicker">{kicker}</div>
+                <h1 class="app-title">{title}</h1>
+                <div class="app-subtitle">{subtitle}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_page_notes(page_name):
+    notes = {
+        "Overview": """
+        This page is the orientation layer for the dashboard.
+
+        Use it to answer four questions first:
+        1. What time window am I looking at?
+        2. How much NH3 and H2S data is actually present in that window?
+        3. Which chemical transitions occurred inside the window?
+        4. Do the odor and operating signals appear to move together at a high level?
+
+        Interpretation notes:
+        - `NH3 mean` is based on the smoothed NH3 signal (`nh3_roll_mean_15min`), not the raw sensor column.
+        - `H2S mean/max logic` is shown from the rolling-max-derived H2S signal because this project treats H2S as spike-driven rather than smoothly varying.
+        - Coverage metrics matter. A low NH3 or H2S coverage percentage means the averages and event summaries may reflect only part of plant behavior in the selected period.
+        - Event counts here are counts of transition timestamps inside the filtered window, not counts across the full project history.
+        """,
+        "Full Timeline": """
+        This page is for temporal pattern reading.
+
+        Use the resolution selector based on the question:
+        - `1-minute`: best for short spikes, event timing, and sensor behavior.
+        - `1-hour`: best for relating odor to broader operating changes and hourly load context.
+        - `Daily`: best for trend compression and longer-duration shifts.
+
+        Reading guidance:
+        - Dashed vertical lines are detected Ferric/HCl ON/OFF transitions.
+        - Dotted purple lines are plant-level contextual events, such as the ferric reduction date.
+        - When you overlay two signals, look for whether peaks, drops, or regime changes line up in time, not just whether the lines share a similar shape.
+        - If a signal appears sparse or flat, check the selected window and data coverage before drawing a conclusion.
+        """,
+        "Event Windows": """
+        This page zooms into one specific transition at a time using a ±48 hour window.
+
+        Purpose:
+        - Inspect what happened immediately before and after a chosen ON or OFF event.
+        - Compare odor signals with temperature or load around the exact operational change.
+
+        How to read it:
+        - The vertical line at `0` marks the event timestamp.
+        - Negative minutes are pre-event conditions; positive minutes are post-event conditions.
+        - `NH3 vs Load` and `H2S vs Load` use transferred volatile load as the secondary series to help assess whether apparent odor changes may be partly explained by throughput rather than chemistry alone.
+
+        Important caution:
+        - A visible change near the event does not automatically mean the event caused it. This page is for close inspection, not causal proof by itself.
+        """,
+        "Event Study": """
+        This page aggregates multiple aligned events of the same type.
+
+        What is happening:
+        - Each event window is aligned so the transition occurs at minute `0`.
+        - The black line is the median response across aligned events.
+        - The shaded band is the interquartile range (25th to 75th percentile), which shows event-to-event spread.
+
+        Why this matters:
+        - Single events can be noisy.
+        - This view helps you see whether a transition tends to produce a consistent directional response across repeated occurrences.
+
+        Pretrend note:
+        - `Pretrend stable` checks whether the median signal was relatively steady before the event.
+        - If pretrend stability is poor, interpretation should be more cautious because the signal may already have been changing before the transition occurred.
+        """,
+        "Transition Comparison": """
+        This page places the first Ferric OFF, Ferric ON, HCl OFF, and HCl ON windows side by side.
+
+        Use it when you want a visual comparison of transition archetypes rather than a single event.
+
+        How to use it well:
+        - Look for whether one transition type produces a sharper or more persistent response than another.
+        - Compare both magnitude and shape. A short spike and a long suppression can have different operational meaning even if their averages are similar.
+        - The metrics table below helps anchor the visual impression with summary values from the currently filtered dataset.
+
+        Limitation:
+        - This page uses representative transition windows, not every event stacked together. For multi-event behavior, use `Event Study`.
+        """,
+        "Aggregates & Coverage": """
+        This page compresses the filtered window into daily, monthly, weekday, and coverage views.
+
+        What each tab is for:
+        - `Daily`: inspect day-to-day movement in odor and operating load.
+        - `Monthly`: compare broad monthly operating levels within the filtered selection.
+        - `Weekday`: check whether weekday structure appears in the selected period.
+        - `Coverage`: verify whether missingness could distort interpretation.
+
+        Interpretation note:
+        - These aggregates are recalculated from the filtered daily dataset, so changing the sidebar date window changes the summaries shown here.
+        - If the filtered period is short, monthly and weekday summaries may be descriptive but not representative.
+        """,
+        "Correlation & Load Analysis": """
+        This page is for relationship screening, not final inference.
+
+        What to look for:
+        - The heatmap shows linear correlation structure among selected variables.
+        - The scatter plot helps assess direction, spread, clustering, and whether a straight-line trend is even a reasonable summary.
+        - The normalized/load-aware table is useful when you want to compare odor intensity after accounting for throughput.
+
+        Cautions:
+        - Correlation does not establish causation.
+        - Relationships can change by operating regime, time scale, or data coverage.
+        - A strong correlation at the daily level may not hold at the minute level, and vice versa.
+        """,
+        "Anomalies": """
+        This page highlights unusual points using a rolling z-score.
+
+        How it works:
+        - The app compares the current value to a rolling mean and rolling standard deviation over the selected window length.
+        - Large absolute z-scores indicate points that are unusual relative to recent history.
+
+        Practical guidance:
+        - Use shorter rolling windows to detect local spikes.
+        - Use longer rolling windows to find larger regime departures.
+        - Treat anomaly flags as candidates for review, not confirmed bad data or confirmed process upsets.
+
+        The second chart shows the z-score itself so you can see whether anomalies are isolated bursts or part of a sustained excursion.
+        """,
+        "Data Explorer": """
+        This page is the raw inspection surface for the filtered datasets.
+
+        Suggested workflow:
+        - Choose the dataset that matches your question.
+        - Limit columns to the signals you actually want to inspect.
+        - Sort by a numeric field when you want the highest values or most extreme rows first.
+        - Use the CSV export when you want a quick external review of the current slice.
+
+        This page is especially useful for validating what you saw in a chart before making any interpretation.
+        """,
+    }
+
+    if page_name in notes:
+        paragraphs = "".join(f"<p>{line}</p>" for line in notes[page_name].strip().split("\n\n"))
+        st.markdown(
+            f"""
+            <div class="page-note">
+                <div class="page-note-title">How To Read This Page</div>
+                {paragraphs}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def dual_axis_figure(df, y1_col, y2_col, y1_label, y2_label, title, add_events=None, bar_second=False):
     return shared_dual_axis_figure(
         df,
@@ -464,7 +771,22 @@ full_event_metrics_df = event_metrics_df
 # --------------------------------------------------
 # SIDEBAR
 # --------------------------------------------------
-st.sidebar.title("Wastewater Treatment")
+st.sidebar.markdown(
+    """
+    <div style="padding:0.2rem 0 0.8rem 0;">
+        <div style="font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; font-weight:700; color:rgba(238,246,241,0.72);">
+            Operations Dashboard
+        </div>
+        <div style="font-size:1.55rem; font-weight:700; line-height:1.05; margin-top:0.2rem;">
+            Wastewater Odor Analytics
+        </div>
+        <div style="font-size:0.92rem; color:rgba(238,246,241,0.78); margin-top:0.45rem; line-height:1.45;">
+            Explore odor behavior, operational transitions, load context, and data quality from one filtered study window.
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 page = st.sidebar.radio(
     "Page",
     [
@@ -484,6 +806,10 @@ full_start = full_master_df.index.min().normalize()
 full_end = full_master_df.index.max().normalize()
 
 with st.sidebar.expander("Time Window", expanded=True):
+    st.caption(
+        "The selected dates filter the entire dashboard. "
+        "Timeline, event counts, event-study summaries, aggregates, anomalies, and explorer exports all update to this window."
+    )
     window_mode = st.selectbox(
         "Range",
         ["Full record", "Last 30 days", "Last 60 days", "Custom"],
@@ -543,6 +869,10 @@ with st.sidebar.expander("Data status", expanded=False):
     st.write(f"Monthly: {'✅' if monthly_df is not None else '❌'}")
     st.write(f"Weekday: {'✅' if weekday_df is not None else '❌'}")
     st.caption(f"Filtered window: {start_ts.date()} to {end_ts.date()}")
+    st.caption(
+        "A green check only means the dataset is available after filtering. "
+        "It does not mean the selected window has strong gas-sensor coverage."
+    )
 
 with st.sidebar.expander("Quick stats", expanded=False):
     st.write(f"Minute rows: {len(master_df):,}")
@@ -556,8 +886,11 @@ with st.sidebar.expander("Quick stats", expanded=False):
 # OVERVIEW
 # --------------------------------------------------
 if page == "Overview":
-    st.title("Wastewater Odor Analytics Dashboard")
-    st.caption("Integrated view of odor, operations, transitions, load, and summary diagnostics.")
+    render_page_header(
+        "Wastewater Odor Analytics Dashboard",
+        "Integrated view of odor, operations, transition timing, process load, and summary diagnostics for the currently selected study window.",
+    )
+    render_page_notes("Overview")
     st.info(
         f"Viewing {start_ts.date()} through {end_ts.date()} "
         f"({len(master_df):,} minute rows, {len(events_table):,} detected transitions in range)."
@@ -584,6 +917,9 @@ if page == "Overview":
     top_cols = available_columns(master_df, [NH3, H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min"])
     if top_cols:
         st.subheader("Primary timeline")
+        st.caption(
+            "Choose two high-priority variables to get a fast sense of whether odor behavior and operations are moving together in the selected window."
+        )
         primary_left = st.selectbox("Primary signal", top_cols, index=0)
         primary_right = st.selectbox("Secondary signal", top_cols, index=min(1, len(top_cols)-1))
         fig = dual_axis_figure(
@@ -614,8 +950,11 @@ if page == "Overview":
 # FULL TIMELINE
 # --------------------------------------------------
 elif page == "Full Timeline":
-    st.title("Full Timeline")
-    st.caption(f"Interactive timeline for the filtered window: {start_ts.date()} to {end_ts.date()}.")
+    render_page_header(
+        "Full Timeline",
+        f"Interactive timeline for the filtered window from {start_ts.date()} to {end_ts.date()}, with minute, hourly, and daily views.",
+    )
+    render_page_notes("Full Timeline")
 
     resolution = st.radio("Resolution", ["1-minute", "1-hour", "Daily"], horizontal=True)
     if resolution == "1-minute":
@@ -632,6 +971,10 @@ elif page == "Full Timeline":
     left_col = st.selectbox("Primary y-axis", cols, index=cols.index(default_left) if default_left in cols else 0)
     right_col = st.selectbox("Secondary y-axis", cols, index=cols.index(default_right) if default_right in cols else 0)
     show_events = st.checkbox("Overlay transition markers", value=True)
+    st.caption(
+        "Use the overlay when you are testing whether odor changes line up with Ferric or HCl transitions. "
+        "Turn it off when the chart becomes too visually dense."
+    )
 
     fig = dual_axis_figure(
         active_df,
@@ -664,7 +1007,11 @@ elif page == "Full Timeline":
 # EVENT WINDOWS
 # --------------------------------------------------
 elif page == "Event Windows":
-    st.title("Event Windows")
+    render_page_header(
+        "Event Windows",
+        "Inspect individual Ferric and HCl transition windows at high temporal resolution to see what changed immediately before and after each event.",
+    )
+    render_page_notes("Event Windows")
 
     event_family = st.selectbox("Event family", list(EVENT_COLUMNS.keys()))
     event_direction = st.radio("Transition", ["ON", "OFF"], horizontal=True)
@@ -678,6 +1025,10 @@ elif page == "Event Windows":
     else:
         st.metric("Available events", len(event_times))
         event_time = st.selectbox("Event timestamp", list(event_times), format_func=lambda x: x.strftime("%Y-%m-%d %H:%M"))
+        st.caption(
+            "Choose a specific transition timestamp to inspect a single event in detail. "
+            "The same event family can behave differently from one occurrence to the next."
+        )
         window_df = master_df.loc[event_time - WINDOW_48H : event_time + WINDOW_48H].copy()
         window_df["minutes_from_event"] = (window_df.index - event_time).total_seconds() / 60
 
@@ -701,13 +1052,21 @@ elif page == "Event Windows":
 # EVENT STUDY
 # --------------------------------------------------
 elif page == "Event Study":
-    st.title("Event Study")
+    render_page_header(
+        "Event Study",
+        "Aggregate aligned transition windows to estimate whether a selected event type tends to produce a consistent NH3 or H2S response.",
+    )
+    render_page_notes("Event Study")
 
     c1, c2, c3 = st.columns(3)
     chem = c1.selectbox("Chemical", list(EVENT_COLUMNS.keys()))
     event_type = c2.selectbox("Event type", ["ON", "OFF"])
     signal_label = c3.selectbox("Signal", ["NH3", "H2S"])
     signal_col = NH3 if signal_label == "NH3" else H2S
+    st.caption(
+        "This view pools all matching events inside the filtered window. "
+        "If only one event is available, the event-study curve is descriptive but not a true multi-event summary."
+    )
 
     summary, aligned_df, pretrend_ok = compute_event_study_summary(master_df, chem, event_type, signal_col)
 
@@ -745,7 +1104,11 @@ elif page == "Event Study":
 # TRANSITION COMPARISON
 # --------------------------------------------------
 elif page == "Transition Comparison":
-    st.title("Transition Comparison")
+    render_page_header(
+        "Transition Comparison",
+        "Compare representative Ferric and HCl ON/OFF windows side by side to see whether operational changes share or diverge in response pattern.",
+    )
+    render_page_notes("Transition Comparison")
 
     compare_options = {
         "NH3 vs H2S": (NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)"),
@@ -755,6 +1118,10 @@ elif page == "Transition Comparison":
         "H2S vs Sludge Flow": (H2S, FLOW, "H₂S (ppm)", "Sludge Flow (GPM)"),
     }
     choice = st.selectbox("Multi-panel view", list(compare_options.keys()))
+    st.caption(
+        "Use this comparison to see whether a response pattern appears specific to Ferric or HCl transitions, "
+        "or whether the same signal behavior shows up across multiple operational changes."
+    )
     y1, y2, y1_label, y2_label = compare_options[choice]
 
     events = {}
@@ -799,8 +1166,12 @@ elif page == "Transition Comparison":
 # AGGREGATES & COVERAGE
 # --------------------------------------------------
 elif page == "Aggregates & Coverage":
-    st.title("Aggregates & Coverage")
+    render_page_header(
+        "Aggregates & Coverage",
+        "Daily, monthly, weekday, and coverage views recalculated from the current time filter so you can understand both signal level and data completeness.",
+    )
     st.caption("Aggregate views are recalculated from the currently filtered daily window.")
+    render_page_notes("Aggregates & Coverage")
 
     tabs = st.tabs(["Daily", "Monthly", "Weekday", "Coverage"])
 
@@ -847,7 +1218,11 @@ elif page == "Aggregates & Coverage":
 # CORRELATION & LOAD ANALYSIS
 # --------------------------------------------------
 elif page == "Correlation & Load Analysis":
-    st.title("Correlation & Load Analysis")
+    render_page_header(
+        "Correlation & Load Analysis",
+        "Screen linear relationships, inspect load-aware behavior, and test whether odor intensity appears to move with process throughput or other covariates.",
+    )
+    render_page_notes("Correlation & Load Analysis")
 
     analysis_df = daily_df.copy() if daily_df is not None else master_df.resample("1D").mean(numeric_only=True)
     analysis_df = analysis_df.copy()
@@ -855,6 +1230,9 @@ elif page == "Correlation & Load Analysis":
     numeric_cols = [c for c in analysis_df.columns if pd.api.types.is_numeric_dtype(analysis_df[c])]
     default_corr = [c for c in [NH3, H2S, "total_gpm", "transferred_lbs_vol_daily", "transferred_lbs_vol", "nh3_std", "h2s_std", "ferric_active_lbs_per_day"] if c in numeric_cols]
     selected = st.multiselect("Columns for heatmap", numeric_cols, default=default_corr[: min(len(default_corr), 8)])
+    st.caption(
+        "Keep the heatmap focused. A smaller set of variables is usually easier to interpret than a large matrix with many weak correlations."
+    )
     if len(selected) >= 2:
         st.plotly_chart(correlation_heatmap(analysis_df, selected), use_container_width=True)
     else:
@@ -867,6 +1245,9 @@ elif page == "Correlation & Load Analysis":
     x_col = st.selectbox("Scatter x", scatter_cols, index=scatter_cols.index(x_default) if x_default in scatter_cols else 0)
     y_col = st.selectbox("Scatter y", scatter_cols, index=scatter_cols.index(y_default) if y_default in scatter_cols else 0)
     color_col = st.selectbox("Color by (optional)", [None] + scatter_cols, index=0)
+    st.caption(
+        "Coloring by a third variable can reveal regime structure, such as different behavior at higher load or under different dosing conditions."
+    )
     st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=f"{y_col} vs {x_col}"), use_container_width=True)
 
     norm_cols = available_columns(master_df, ["nh3_per_lb", "h2s_per_lb", "lbs_per_min", "total_gpm", NH3, H2S])
@@ -879,12 +1260,20 @@ elif page == "Correlation & Load Analysis":
 # ANOMALIES
 # --------------------------------------------------
 elif page == "Anomalies":
-    st.title("Anomalies")
+    render_page_header(
+        "Anomalies",
+        "Use rolling z-scores to identify unusual observations in odor, temperature, flow, or load-normalized signals within the filtered study window.",
+    )
+    render_page_notes("Anomalies")
 
     candidates = available_columns(master_df, [NH3, H2S, RAW_NH3, RAW_H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min", "nh3_per_lb", "h2s_per_lb"])
     target_col = st.selectbox("Signal", candidates)
     window = st.slider("Rolling window (minutes)", min_value=60, max_value=4320, value=1440, step=60)
     threshold = st.slider("Absolute z-score threshold", min_value=2.0, max_value=6.0, value=3.0, step=0.25)
+    st.caption(
+        "Higher thresholds show only more extreme departures. "
+        "Lower thresholds are more sensitive but will usually produce more candidate anomalies to review."
+    )
 
     z = add_zscore(master_df, target_col, window=window)
     anomalies = detect_anomalies(master_df, target_col, threshold=threshold, window=window)
@@ -913,9 +1302,17 @@ elif page == "Anomalies":
 # DATA EXPLORER
 # --------------------------------------------------
 elif page == "Data Explorer":
-    st.title("Data Explorer")
+    render_page_header(
+        "Data Explorer",
+        "Inspect the underlying filtered tables directly, sort important fields, and export a quick CSV slice for external review or documentation.",
+    )
+    render_page_notes("Data Explorer")
 
     dataset_name = st.selectbox("Dataset", ["master_1min", "master_1h", "master_daily", "monthly_summary", "weekday_summary", "event_metrics"])
+    st.caption(
+        "The explorer always reflects the current sidebar time filter for time-indexed datasets. "
+        "Use it to validate specific values behind charts before making an interpretation."
+    )
     dataset_map = {
         "master_1min": master_df,
         "master_1h": hourly_df,
