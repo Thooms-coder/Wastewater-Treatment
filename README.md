@@ -26,6 +26,8 @@ It integrates:
     │   ├── preprocess.py
     │   ├── features.py
     │   ├── chemistry_features.py
+    │   ├── build_modeling_table.py
+    │   ├── train_models.py
     │   ├── events.py
     │   ├── build_master.py
     │   ├── build_daily.py
@@ -107,6 +109,8 @@ Expected inputs:
 Run the pipeline:
 
 python -m scripts.build_master  
+python -m scripts.build_modeling_table  
+python -m scripts.train_models  
 python -m scripts.build_daily  
 python -m scripts.build_aggregates  
 
@@ -151,6 +155,8 @@ streamlit run app/app.py
 ## Outputs
 
 - master_1min.parquet  
+- modeling_table.parquet  
+- baseline model artifacts in `models/`  
 - master_daily.parquet  
 - monthly_summary.parquet  
 - weekday_summary.parquet  
