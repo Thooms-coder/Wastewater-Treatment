@@ -212,24 +212,63 @@ def event_study_figure(summary, title, ylabel):
 
 def correlation_heatmap(df, cols, title="Correlation Heatmap"):
     corr = df[cols].corr(numeric_only=True)
+    labels = [str(col).replace("_", " ") for col in corr.columns]
+    text = np.round(corr.values, 2)
     fig = go.Figure(
         data=go.Heatmap(
             z=corr.values,
-            x=corr.columns,
-            y=corr.index,
+            x=labels,
+            y=labels,
+            zmin=-1,
+            zmax=1,
+            zmid=0,
+            colorscale=[
+                [0.0, "#7f3b08"],
+                [0.18, "#b35806"],
+                [0.5, "#f7f3ea"],
+                [0.82, "#3e7f6a"],
+                [1.0, "#1f6a53"],
+            ],
+            text=text,
+            texttemplate="%{text:.2f}",
+            textfont={"size": 11},
+            xgap=2,
+            ygap=2,
+            colorbar={
+                "title": "Correlation",
+                "tickformat": ".2f",
+                "len": 0.8,
+            },
             hovertemplate="%{y} vs %{x}: %{z:.3f}<extra></extra>",
         )
     )
-    fig.update_layout(title=title, height=650, margin=dict(l=100, r=100, t=100, b=100), **DEFAULT_LAYOUT)
+    fig.update_layout(
+        title=title,
+        height=max(520, 90 + 36 * len(labels)),
+        margin=dict(l=100, r=100, t=100, b=100),
+        xaxis_title="",
+        yaxis_title="",
+        **DEFAULT_LAYOUT,
+    )
+    fig.update_xaxes(side="bottom", tickangle=-35)
+    fig.update_yaxes(autorange="reversed")
     return fig
 
 
 def heatmap_matrix(matrix, title=""):
+    text = np.round(matrix.values, 2)
     fig = go.Figure(
         data=go.Heatmap(
             z=matrix.values,
             x=list(matrix.columns),
             y=list(matrix.index),
+            text=text,
+            texttemplate="%{text:.2f}",
+            textfont={"size": 11},
+            xgap=1,
+            ygap=1,
+            colorscale="YlGnBu",
+            colorbar={"tickformat": ".2f"},
             hovertemplate="Value: %{z:.3f}<extra></extra>",
         )
     )
