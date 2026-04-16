@@ -1,4 +1,5 @@
 import sys
+from html import escape
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -221,6 +222,121 @@ st.markdown(
         font-size: 0.8rem;
         font-weight: 600;
         border: 1px solid rgba(31, 106, 83, 0.14);
+    }
+
+    .context-band {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 1rem;
+        margin: 0.2rem 0 1rem 0;
+    }
+
+    .context-panel, .section-intro {
+        background: linear-gradient(180deg, rgba(255, 252, 245, 0.95) 0%, rgba(250, 247, 240, 0.98) 100%);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 1rem 1.1rem;
+        box-shadow: var(--shadow);
+    }
+
+    .context-label, .section-label {
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.35rem;
+    }
+
+    .context-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.15;
+        margin-bottom: 0.28rem;
+        color: var(--ink);
+    }
+
+    .context-copy, .section-copy {
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.8rem;
+    }
+
+    .metric-pill {
+        padding: 0.56rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(31, 106, 83, 0.08);
+        border: 1px solid rgba(31, 106, 83, 0.12);
+        color: var(--ink);
+        font-size: 0.84rem;
+        line-height: 1.2;
+    }
+
+    .metric-pill strong {
+        color: var(--accent);
+        font-weight: 700;
+        margin-right: 0.28rem;
+    }
+
+    .section-intro {
+        margin: 0.2rem 0 0.8rem 0;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.15;
+        color: var(--ink);
+        margin-bottom: 0.25rem;
+    }
+
+    .table-caption {
+        font-size: 0.84rem;
+        color: var(--muted);
+        margin-top: -0.15rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .block-spacer {
+        height: 0.35rem;
+    }
+
+    [data-testid="stRadio"] > div {
+        gap: 0.5rem;
+    }
+
+    [data-testid="stRadio"] label[data-baseweb="radio"] {
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+    }
+
+    [data-testid="stSelectbox"] label,
+    [data-testid="stMultiSelect"] label,
+    [data-testid="stDateInput"] label,
+    [data-testid="stSlider"] label,
+    [data-testid="stCheckbox"] label {
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    [data-testid="stAlert"] {
+        border-radius: 16px;
+    }
+
+    @media (max-width: 960px) {
+        .context-band {
+            grid-template-columns: 1fr;
+        }
     }
     </style>
     """,
@@ -561,9 +677,9 @@ def render_page_header(title, subtitle, kicker="Wastewater Treatment"):
         f"""
         <div class="app-shell">
             <div class="app-hero">
-                <div class="app-kicker">{kicker}</div>
-                <h1 class="app-title">{title}</h1>
-                <div class="app-subtitle">{subtitle}</div>
+                <div class="app-kicker">{escape(kicker)}</div>
+                <h1 class="app-title">{escape(title)}</h1>
+                <div class="app-subtitle">{escape(subtitle)}</div>
             </div>
         </div>
         """,
@@ -710,6 +826,49 @@ def render_page_notes(page_name):
             """,
             unsafe_allow_html=True,
         )
+
+
+def render_context_band(start_ts, end_ts, rows, transitions, nh3_cov, h2s_cov):
+    st.markdown(
+        f"""
+        <div class="context-band">
+            <div class="context-panel">
+                <div class="context-label">Study Window</div>
+                <div class="context-title">{start_ts.date()} to {end_ts.date()}</div>
+                <p class="context-copy">
+                    Every chart, event count, aggregate, anomaly flag, and table on this page is scoped to the currently selected filter window.
+                </p>
+                <div class="pill-row">
+                    <div class="metric-pill"><strong>Rows</strong>{rows:,}</div>
+                    <div class="metric-pill"><strong>Transitions</strong>{transitions:,}</div>
+                    <div class="metric-pill"><strong>NH3 coverage</strong>{nh3_cov}</div>
+                    <div class="metric-pill"><strong>H2S coverage</strong>{h2s_cov}</div>
+                </div>
+            </div>
+            <div class="context-panel">
+                <div class="context-label">Reading Focus</div>
+                <div class="context-title">Interpret the window before interpreting the signal.</div>
+                <p class="context-copy">
+                    Coverage, event density, and time scale all change what a pattern means. Use the filter window as part of the analysis, not just as a convenience control.
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_section_intro(title, description):
+    st.markdown(
+        f"""
+        <div class="section-intro">
+            <div class="section-label">Section</div>
+            <div class="section-title">{escape(title)}</div>
+            <p class="section-copy">{escape(description)}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def dual_axis_figure(df, y1_col, y2_col, y1_label, y2_label, title, add_events=None, bar_second=False):
@@ -891,11 +1050,19 @@ if page == "Overview":
         "Integrated view of odor, operations, transition timing, process load, and summary diagnostics for the currently selected study window.",
     )
     render_page_notes("Overview")
-    st.info(
-        f"Viewing {start_ts.date()} through {end_ts.date()} "
-        f"({len(master_df):,} minute rows, {len(events_table):,} detected transitions in range)."
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
     )
 
+    render_section_intro(
+        "Window Summary",
+        "Start with coverage, event density, and baseline operating level before reading any single chart as meaningful process behavior.",
+    )
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Rows (1-min)", f"{len(master_df):,}")
     c2.metric("NH3 mean", metric_value(master_df, NH3))
@@ -916,7 +1083,10 @@ if page == "Overview":
 
     top_cols = available_columns(master_df, [NH3, H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min"])
     if top_cols:
-        st.subheader("Primary timeline")
+        render_section_intro(
+            "Primary Timeline",
+            "Pick two signals that matter most for the question in front of you and use this chart as the fastest read on whether odor and operations appear to move together.",
+        )
         st.caption(
             "Choose two high-priority variables to get a fast sense of whether odor behavior and operations are moving together in the selected window."
         )
@@ -933,12 +1103,18 @@ if page == "Overview":
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    render_section_intro(
+        "Event Inventory And Response Metrics",
+        "Pair the raw transition list with the summary metrics so you can see both how often events happened and what typical post-event changes looked like.",
+    )
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Detected events")
+        st.markdown('<div class="table-caption">Chronological transition timestamps inside the active filter window.</div>', unsafe_allow_html=True)
         st.dataframe(events_table, use_container_width=True, height=260)
     with c2:
         st.subheader("Event response summary")
+        st.markdown('<div class="table-caption">Aggregated pre/post effect metrics computed from matching transitions in the active window.</div>', unsafe_allow_html=True)
         show_cols = [
             c for c in ["chemical", "event_type", "signal", "delta", "percent_change", "time_to_min", "persistence", "post_iqr", "n_events"]
             if c in event_metrics_df.columns
@@ -955,7 +1131,19 @@ elif page == "Full Timeline":
         f"Interactive timeline for the filtered window from {start_ts.date()} to {end_ts.date()}, with minute, hourly, and daily views.",
     )
     render_page_notes("Full Timeline")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Interactive Timeline Builder",
+        "Adjust resolution and signal pairing to match the scale of the question. Short spikes, hourly context, and longer trends should not be read from the same view.",
+    )
     resolution = st.radio("Resolution", ["1-minute", "1-hour", "Daily"], horizontal=True)
     if resolution == "1-minute":
         active_df = master_df
@@ -988,6 +1176,10 @@ elif page == "Full Timeline":
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    render_section_intro(
+        "Script-Aligned Shortcuts",
+        "These views mirror common analysis pairings used elsewhere in the project so you can quickly reproduce familiar reads without rebuilding the chart setup each time.",
+    )
     st.subheader("Script-aligned shortcuts")
     c1, c2 = st.columns(2)
     with c1:
@@ -1012,7 +1204,19 @@ elif page == "Event Windows":
         "Inspect individual Ferric and HCl transition windows at high temporal resolution to see what changed immediately before and after each event.",
     )
     render_page_notes("Event Windows")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Single-Event Inspection",
+        "Use this page when you want to inspect one transition closely rather than averaging across many events. The goal is local context, not generalized effect estimation.",
+    )
     event_family = st.selectbox("Event family", list(EVENT_COLUMNS.keys()))
     event_direction = st.radio("Transition", ["ON", "OFF"], horizontal=True)
     signal_mode = st.radio("Window view", ["NH3 vs H2S", "NH3 vs Temperature", "H2S vs Temperature", "NH3 vs Load", "H2S vs Load"], horizontal=True)
@@ -1057,7 +1261,19 @@ elif page == "Event Study":
         "Aggregate aligned transition windows to estimate whether a selected event type tends to produce a consistent NH3 or H2S response.",
     )
     render_page_notes("Event Study")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Aligned Multi-Event Response",
+        "This view stacks all matching events in the filtered window at minute zero so repeated behavior is easier to distinguish from one-off noise.",
+    )
     c1, c2, c3 = st.columns(3)
     chem = c1.selectbox("Chemical", list(EVENT_COLUMNS.keys()))
     event_type = c2.selectbox("Event type", ["ON", "OFF"])
@@ -1109,7 +1325,19 @@ elif page == "Transition Comparison":
         "Compare representative Ferric and HCl ON/OFF windows side by side to see whether operational changes share or diverge in response pattern.",
     )
     render_page_notes("Transition Comparison")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Representative Transition Comparison",
+        "Use the paired panels to compare shape, persistence, and timing differences across Ferric and HCl transitions without leaving the same visual frame.",
+    )
     compare_options = {
         "NH3 vs H2S": (NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)"),
         "NH3 vs Temperature": (NH3, TEMP_NH3, "NH₃ (ppm)", "Temperature (°F)"),
@@ -1172,6 +1400,18 @@ elif page == "Aggregates & Coverage":
     )
     st.caption("Aggregate views are recalculated from the currently filtered daily window.")
     render_page_notes("Aggregates & Coverage")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
+    render_section_intro(
+        "Compressed Views",
+        "Switch here when the minute-level timeline is too granular and you need daily structure, seasonal shape, weekday patterns, or a direct read on missingness.",
+    )
 
     tabs = st.tabs(["Daily", "Monthly", "Weekday", "Coverage"])
 
@@ -1223,10 +1463,22 @@ elif page == "Correlation & Load Analysis":
         "Screen linear relationships, inspect load-aware behavior, and test whether odor intensity appears to move with process throughput or other covariates.",
     )
     render_page_notes("Correlation & Load Analysis")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
     analysis_df = daily_df.copy() if daily_df is not None else master_df.resample("1D").mean(numeric_only=True)
     analysis_df = analysis_df.copy()
 
+    render_section_intro(
+        "Relationship Screening",
+        "Use the heatmap to narrow candidates, then use the scatter plot to test whether the apparent relationship is directional, clustered, nonlinear, or mostly noise.",
+    )
     numeric_cols = [c for c in analysis_df.columns if pd.api.types.is_numeric_dtype(analysis_df[c])]
     default_corr = [c for c in [NH3, H2S, "total_gpm", "transferred_lbs_vol_daily", "transferred_lbs_vol", "nh3_std", "h2s_std", "ferric_active_lbs_per_day"] if c in numeric_cols]
     selected = st.multiselect("Columns for heatmap", numeric_cols, default=default_corr[: min(len(default_corr), 8)])
@@ -1265,7 +1517,19 @@ elif page == "Anomalies":
         "Use rolling z-scores to identify unusual observations in odor, temperature, flow, or load-normalized signals within the filtered study window.",
     )
     render_page_notes("Anomalies")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Rolling Surprise Detection",
+        "This workflow highlights local departures from recent history. It is useful for investigation triage, but the flags still need process context before they mean anything operationally.",
+    )
     candidates = available_columns(master_df, [NH3, H2S, RAW_NH3, RAW_H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min", "nh3_per_lb", "h2s_per_lb"])
     target_col = st.selectbox("Signal", candidates)
     window = st.slider("Rolling window (minutes)", min_value=60, max_value=4320, value=1440, step=60)
@@ -1307,7 +1571,19 @@ elif page == "Data Explorer":
         "Inspect the underlying filtered tables directly, sort important fields, and export a quick CSV slice for external review or documentation.",
     )
     render_page_notes("Data Explorer")
+    render_context_band(
+        start_ts,
+        end_ts,
+        len(master_df),
+        len(events_table),
+        coverage_value(master_df, NH3, len(master_df)),
+        coverage_value(master_df, H2S, len(master_df)),
+    )
 
+    render_section_intro(
+        "Table-Level Validation",
+        "Use the explorer to validate values behind charts, inspect extreme rows directly, and export a filtered slice without leaving the dashboard.",
+    )
     dataset_name = st.selectbox("Dataset", ["master_1min", "master_1h", "master_daily", "monthly_summary", "weekday_summary", "event_metrics"])
     st.caption(
         "The explorer always reflects the current sidebar time filter for time-indexed datasets. "
