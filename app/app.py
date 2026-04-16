@@ -239,6 +239,23 @@ st.markdown(
         box-shadow: var(--shadow);
     }
 
+    .context-panel.executive {
+        background:
+            linear-gradient(135deg, rgba(21, 52, 43, 0.98) 0%, rgba(33, 74, 60, 0.96) 100%);
+        border-color: rgba(255,255,255,0.08);
+        color: #f3f7f4;
+    }
+
+    .context-panel.executive .context-label,
+    .context-panel.executive .context-title,
+    .context-panel.executive .context-copy {
+        color: #f3f7f4;
+    }
+
+    .context-panel.executive .context-label {
+        color: rgba(243, 247, 244, 0.72);
+    }
+
     .context-label, .section-label {
         text-transform: uppercase;
         letter-spacing: 0.11em;
@@ -305,6 +322,123 @@ st.markdown(
         margin-bottom: 0.45rem;
     }
 
+    .executive-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.9rem;
+        margin: 0.35rem 0 1rem 0;
+    }
+
+    .executive-card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248, 245, 238, 0.98) 100%);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 1rem 1rem 0.95rem 1rem;
+        box-shadow: var(--shadow);
+    }
+
+    .executive-card-label {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.45rem;
+    }
+
+    .executive-card-value {
+        font-size: 1.8rem;
+        line-height: 1;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 0.45rem;
+    }
+
+    .executive-card-note {
+        font-size: 0.9rem;
+        line-height: 1.45;
+        color: var(--muted);
+    }
+
+    .brief-list {
+        margin: 0.8rem 0 0 0;
+        padding-left: 1.05rem;
+        color: #f3f7f4;
+    }
+
+    .brief-list li {
+        margin: 0.35rem 0;
+        line-height: 1.45;
+    }
+
+    .report-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(90deg, rgba(31, 106, 83, 0.1) 0%, rgba(139, 94, 26, 0.08) 100%);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 0.9rem 1rem;
+        margin: 0.2rem 0 1rem 0;
+        box-shadow: var(--shadow);
+    }
+
+    .report-banner strong {
+        display: block;
+        color: var(--ink);
+        margin-bottom: 0.1rem;
+    }
+
+    .report-banner span {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    .report-chip {
+        white-space: nowrap;
+        border-radius: 999px;
+        padding: 0.45rem 0.7rem;
+        background: rgba(255,255,255,0.88);
+        border: 1px solid rgba(24, 35, 31, 0.1);
+        color: var(--accent);
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .report-two-col {
+        display: grid;
+        grid-template-columns: 1.45fr 1fr;
+        gap: 1rem;
+        margin: 0.25rem 0 1rem 0;
+    }
+
+    .report-card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(248, 245, 238, 0.98) 100%);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 1rem 1.05rem;
+        box-shadow: var(--shadow);
+    }
+
+    .report-card h3 {
+        margin: 0 0 0.45rem 0;
+        font-size: 1.05rem;
+        color: var(--ink);
+    }
+
+    .report-card p, .report-card li {
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.93rem;
+    }
+
+    .report-card ul {
+        margin: 0.55rem 0 0 1rem;
+        padding: 0;
+    }
+
     .block-spacer {
         height: 0.35rem;
     }
@@ -336,6 +470,46 @@ st.markdown(
     @media (max-width: 960px) {
         .context-band {
             grid-template-columns: 1fr;
+        }
+
+        .executive-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-two-col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media print {
+        [data-testid="stSidebar"],
+        [data-testid="collapsedControl"],
+        [data-testid="stToolbar"],
+        [data-testid="stHeader"],
+        [data-testid="stRadio"],
+        [data-testid="stSelectbox"],
+        [data-testid="stMultiSelect"],
+        [data-testid="stSlider"],
+        [data-testid="stDateInput"],
+        [data-testid="stCheckbox"],
+        [data-testid="stDownloadButton"],
+        button,
+        .stTabs {
+            display: none !important;
+        }
+
+        .stApp, .main, section.main > div {
+            background: white !important;
+        }
+
+        .app-hero,
+        .context-panel,
+        .section-intro,
+        .executive-card,
+        .report-card,
+        [data-testid="stMetric"] {
+            box-shadow: none !important;
+            break-inside: avoid;
         }
     }
     </style>
@@ -672,6 +846,54 @@ def coverage_value(df, col, expected_points):
     return f"{pct:.1f}%"
 
 
+def safe_delta(series):
+    if series is None or len(series.dropna()) < 2:
+        return None
+    clean = series.dropna()
+    return clean.iloc[-1] - clean.iloc[0]
+
+
+def executive_summary(master_df, events_table):
+    if master_df is None or master_df.empty:
+        return []
+
+    nh3_delta = safe_delta(master_df[NH3]) if NH3 in master_df.columns else None
+    h2s_delta = safe_delta(master_df[H2S]) if H2S in master_df.columns else None
+    avg_flow = metric_value(master_df, "total_gpm")
+    transitions = len(events_table)
+    nh3_cov = coverage_value(master_df, NH3, len(master_df))
+    h2s_cov = coverage_value(master_df, H2S, len(master_df))
+
+    messages = [
+        f"The reporting window covers {master_df.index.min().date()} to {master_df.index.max().date()} with {transitions:,} detected chemical transitions.",
+        f"Observed gas coverage is {nh3_cov} for NH3 and {h2s_cov} for H2S, which sets the confidence ceiling for every summary shown below.",
+        f"Average plant flow during the window was {avg_flow} total GPM."
+    ]
+
+    if nh3_delta is not None:
+        direction = "up" if nh3_delta > 0 else "down" if nh3_delta < 0 else "flat"
+        messages.append(f"NH3 finished the period {direction} by {abs(nh3_delta):.2f} ppm versus the opening level.")
+    if h2s_delta is not None:
+        direction = "up" if h2s_delta > 0 else "down" if h2s_delta < 0 else "flat"
+        messages.append(f"H2S finished the period {direction} by {abs(h2s_delta):.2f} ppm versus the opening level.")
+
+    return messages
+
+
+def render_executive_cards(cards):
+    markup = "".join(
+        f"""
+        <div class="executive-card">
+            <div class="executive-card-label">{escape(card["label"])}</div>
+            <div class="executive-card-value">{escape(card["value"])}</div>
+            <div class="executive-card-note">{escape(card["note"])}</div>
+        </div>
+        """
+        for card in cards
+    )
+    st.markdown(f'<div class="executive-grid">{markup}</div>', unsafe_allow_html=True)
+
+
 def render_page_header(title, subtitle, kicker="Wastewater Treatment"):
     st.markdown(
         f"""
@@ -689,7 +911,7 @@ def render_page_header(title, subtitle, kicker="Wastewater Treatment"):
 
 def render_page_notes(page_name):
     notes = {
-        "Overview": """
+        "Executive Brief": """
         This page is the orientation layer for the dashboard.
 
         Use it to answer four questions first:
@@ -704,7 +926,7 @@ def render_page_notes(page_name):
         - Coverage metrics matter. A low NH3 or H2S coverage percentage means the averages and event summaries may reflect only part of plant behavior in the selected period.
         - Event counts here are counts of transition timestamps inside the filtered window, not counts across the full project history.
         """,
-        "Full Timeline": """
+        "Operations Review": """
         This page is for temporal pattern reading.
 
         Use the resolution selector based on the question:
@@ -762,7 +984,7 @@ def render_page_notes(page_name):
         Limitation:
         - This page uses representative transition windows, not every event stacked together. For multi-event behavior, use `Event Study`.
         """,
-        "Aggregates & Coverage": """
+        "Performance & Coverage": """
         This page compresses the filtered window into daily, monthly, weekday, and coverage views.
 
         What each tab is for:
@@ -788,7 +1010,7 @@ def render_page_notes(page_name):
         - Relationships can change by operating regime, time scale, or data coverage.
         - A strong correlation at the daily level may not hold at the minute level, and vice versa.
         """,
-        "Anomalies": """
+        "Diagnostics & Data": """
         This page highlights unusual points using a rolling z-score.
 
         How it works:
@@ -820,7 +1042,7 @@ def render_page_notes(page_name):
         st.markdown(
             f"""
             <div class="page-note">
-                <div class="page-note-title">How To Read This Page</div>
+                <div class="page-note-title">Executive Reading Guide</div>
                 {paragraphs}
             </div>
             """,
@@ -851,6 +1073,80 @@ def render_context_band(start_ts, end_ts, rows, transitions, nh3_cov, h2s_cov):
                 <p class="context-copy">
                     Coverage, event density, and time scale all change what a pattern means. Use the filter window as part of the analysis, not just as a convenience control.
                 </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_executive_brief(master_df, events_table):
+    bullets = "".join(f"<li>{escape(item)}</li>" for item in executive_summary(master_df, events_table))
+    st.markdown(
+        f"""
+        <div class="context-panel executive">
+            <div class="context-label">Executive Brief</div>
+            <div class="context-title">What matters in this reporting window</div>
+            <p class="context-copy">
+                This summary is designed for briefing and review. It compresses the current window into a short narrative before the detailed charts.
+            </p>
+            <ul class="brief-list">{bullets}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_report_banner():
+    st.markdown(
+        """
+        <div class="report-banner">
+            <div>
+                <strong>Printable Report Layout</strong>
+                <span>
+                    Use the browser print dialog on this page for a clean reporting export. Controls and navigation are suppressed in print view.
+                </span>
+            </div>
+            <div class="report-chip">Optimized For PDF Export</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_report_highlights(master_df, events_table, event_metrics_df):
+    effect_lines = []
+    if event_metrics_df is not None and not event_metrics_df.empty:
+        ranked = event_metrics_df.copy()
+        if "percent_change" in ranked.columns:
+            ranked = ranked.assign(abs_change=ranked["percent_change"].abs()).sort_values("abs_change", ascending=False)
+        ranked = ranked.head(3)
+        for _, row in ranked.iterrows():
+            if {"chemical", "event_type", "signal", "percent_change"}.issubset(ranked.columns):
+                effect_lines.append(
+                    f"{row['chemical']} {row['event_type']} on {row['signal']}: {row['percent_change']:.1f}% median change."
+                )
+
+    if not effect_lines:
+        effect_lines = [
+            "Event effect metrics are not available for this reporting window.",
+            "Use the transition tables below when a narrative explanation is still required.",
+        ]
+
+    summary_lines = executive_summary(master_df, events_table)[:3]
+    summary_markup = "".join(f"<li>{escape(item)}</li>" for item in summary_lines)
+    effect_markup = "".join(f"<li>{escape(item)}</li>" for item in effect_lines)
+
+    st.markdown(
+        f"""
+        <div class="report-two-col">
+            <div class="report-card">
+                <h3>Management Summary</h3>
+                <ul>{summary_markup}</ul>
+            </div>
+            <div class="report-card">
+                <h3>Largest Estimated Effects</h3>
+                <ul>{effect_markup}</ul>
             </div>
         </div>
         """,
@@ -934,13 +1230,13 @@ st.sidebar.markdown(
     """
     <div style="padding:0.2rem 0 0.8rem 0;">
         <div style="font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; font-weight:700; color:rgba(238,246,241,0.72);">
-            Operations Dashboard
+            Executive Reporting
         </div>
         <div style="font-size:1.55rem; font-weight:700; line-height:1.05; margin-top:0.2rem;">
             Wastewater Odor Analytics
         </div>
         <div style="font-size:0.92rem; color:rgba(238,246,241,0.78); margin-top:0.45rem; line-height:1.45;">
-            Explore odor behavior, operational transitions, load context, and data quality from one filtered study window.
+            Review plant odor performance, operating transitions, process load, and data confidence inside a single reporting window.
         </div>
     </div>
     """,
@@ -949,15 +1245,10 @@ st.sidebar.markdown(
 page = st.sidebar.radio(
     "Page",
     [
-        "Overview",
-        "Full Timeline",
-        "Event Windows",
-        "Event Study",
-        "Transition Comparison",
-        "Aggregates & Coverage",
-        "Correlation & Load Analysis",
-        "Anomalies",
-        "Data Explorer",
+        "Executive Brief",
+        "Operations Review",
+        "Performance & Coverage",
+        "Diagnostics & Data",
     ],
 )
 
@@ -1044,12 +1335,12 @@ with st.sidebar.expander("Quick stats", expanded=False):
 # --------------------------------------------------
 # OVERVIEW
 # --------------------------------------------------
-if page == "Overview":
+if page == "Executive Brief":
     render_page_header(
-        "Wastewater Odor Analytics Dashboard",
-        "Integrated view of odor, operations, transition timing, process load, and summary diagnostics for the currently selected study window.",
+        "Wastewater Odor Performance Brief",
+        "Executive summary of odor conditions, process context, transition activity, and data confidence for the currently selected reporting window.",
     )
-    render_page_notes("Overview")
+    render_page_notes("Executive Brief")
     render_context_band(
         start_ts,
         end_ts,
@@ -1058,37 +1349,71 @@ if page == "Overview":
         coverage_value(master_df, NH3, len(master_df)),
         coverage_value(master_df, H2S, len(master_df)),
     )
+    render_report_banner()
+    render_executive_brief(master_df, events_table)
+    render_report_highlights(master_df, events_table, event_metrics_df)
 
     render_section_intro(
-        "Window Summary",
-        "Start with coverage, event density, and baseline operating level before reading any single chart as meaningful process behavior.",
+        "Key Performance Snapshot",
+        "Use these cards as the boardroom summary: current window size, odor levels, operating load, transition activity, and confidence in the underlying sensor coverage.",
     )
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Rows (1-min)", f"{len(master_df):,}")
-    c2.metric("NH3 mean", metric_value(master_df, NH3))
-    c3.metric("H2S mean/max logic", metric_value(master_df, H2S))
-    c4.metric("Date range", f"{master_df.index.min().date()} → {master_df.index.max().date()}")
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Ferric ON events", len(all_events.get("Ferric_ON", [])))
-    c2.metric("Ferric OFF events", len(all_events.get("Ferric_OFF", [])))
-    c3.metric("HCl ON events", len(all_events.get("HCl_ON", [])))
-    c4.metric("HCl OFF events", len(all_events.get("HCl_OFF", [])))
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("NH3 coverage", coverage_value(master_df, NH3, len(master_df)))
-    c2.metric("H2S coverage", coverage_value(master_df, H2S, len(master_df)))
-    c3.metric("Avg total GPM", metric_value(master_df, "total_gpm"))
-    c4.metric("Avg lbs/min", metric_value(master_df, "lbs_per_min"))
+    render_executive_cards(
+        [
+            {
+                "label": "Reporting Window",
+                "value": f"{master_df.index.min().date()} to {master_df.index.max().date()}",
+                "note": f"{len(master_df):,} minute-level rows included in this brief.",
+            },
+            {
+                "label": "Average Odor Load",
+                "value": f"NH3 {metric_value(master_df, NH3)} | H2S {metric_value(master_df, H2S)}",
+                "note": "Mean window-level odor indicators used for high-level performance review.",
+            },
+            {
+                "label": "Process Throughput",
+                "value": f"{metric_value(master_df, 'total_gpm')} GPM",
+                "note": f"Average volatile transfer rate: {metric_value(master_df, 'lbs_per_min')} lbs/min.",
+            },
+            {
+                "label": "Transition Activity",
+                "value": f"{len(events_table):,}",
+                "note": "Detected Ferric and HCl ON/OFF transitions inside the reporting window.",
+            },
+        ]
+    )
+    render_executive_cards(
+        [
+            {
+                "label": "Ferric Activity",
+                "value": f"ON {len(all_events.get('Ferric_ON', []))} | OFF {len(all_events.get('Ferric_OFF', []))}",
+                "note": "Counts help explain whether odor movement coincides with Ferric changes.",
+            },
+            {
+                "label": "HCl Activity",
+                "value": f"ON {len(all_events.get('HCl_ON', []))} | OFF {len(all_events.get('HCl_OFF', []))}",
+                "note": "Transition counts summarize HCl operational change frequency.",
+            },
+            {
+                "label": "NH3 Data Confidence",
+                "value": coverage_value(master_df, NH3, len(master_df)),
+                "note": "Coverage is the share of minute rows with NH3 observations in the window.",
+            },
+            {
+                "label": "H2S Data Confidence",
+                "value": coverage_value(master_df, H2S, len(master_df)),
+                "note": "Coverage is the share of minute rows with H2S observations in the window.",
+            },
+        ]
+    )
 
     top_cols = available_columns(master_df, [NH3, H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min"])
     if top_cols:
         render_section_intro(
-            "Primary Timeline",
-            "Pick two signals that matter most for the question in front of you and use this chart as the fastest read on whether odor and operations appear to move together.",
+            "Headline Trend View",
+            "Use one chart to anchor the briefing. This should show the main odor signal against the most relevant operational context for the reporting conversation.",
         )
         st.caption(
-            "Choose two high-priority variables to get a fast sense of whether odor behavior and operations are moving together in the selected window."
+            "Select the pairing you want to use as the lead visual in the reporting narrative."
         )
         primary_left = st.selectbox("Primary signal", top_cols, index=0)
         primary_right = st.selectbox("Secondary signal", top_cols, index=min(1, len(top_cols)-1))
@@ -1104,8 +1429,8 @@ if page == "Overview":
         st.plotly_chart(fig, use_container_width=True)
 
     render_section_intro(
-        "Event Inventory And Response Metrics",
-        "Pair the raw transition list with the summary metrics so you can see both how often events happened and what typical post-event changes looked like.",
+        "Operational Transition Summary",
+        "Use this section to support the narrative with concrete timing and effect estimates for operational changes observed during the reporting window.",
     )
     c1, c2 = st.columns(2)
     with c1:
@@ -1125,12 +1450,12 @@ if page == "Overview":
 # --------------------------------------------------
 # FULL TIMELINE
 # --------------------------------------------------
-elif page == "Full Timeline":
+elif page == "Operations Review":
     render_page_header(
         "Full Timeline",
         f"Interactive timeline for the filtered window from {start_ts.date()} to {end_ts.date()}, with minute, hourly, and daily views.",
     )
-    render_page_notes("Full Timeline")
+    render_page_notes("Operations Review")
     render_context_band(
         start_ts,
         end_ts,
@@ -1193,6 +1518,106 @@ elif page == "Full Timeline":
             hourly_plot = hourly_df[["lbs_volatile"]].rename(columns={"lbs_volatile": "Transferred Lbs Vol"})
             merged = master_df[[H2S]].join(hourly_plot, how="outer")
             st.plotly_chart(dual_axis_figure(merged, H2S, "Transferred Lbs Vol", "H₂S (ppm)", "Transferred Lbs Vol", "H₂S & Hourly Transferred Lbs Vol", add_events=all_events, bar_second=True), use_container_width=True)
+
+    render_section_intro(
+        "Single Transition Inspection",
+        "Use this section when leadership needs a concrete before-and-after view around one specific Ferric or HCl event rather than a full-window trend.",
+    )
+    event_family = st.selectbox("Event family", list(EVENT_COLUMNS.keys()), key="ops_event_family")
+    event_direction = st.radio("Transition", ["ON", "OFF"], horizontal=True, key="ops_event_direction")
+    signal_mode = st.radio(
+        "Window view",
+        ["NH3 vs H2S", "NH3 vs Temperature", "H2S vs Temperature", "NH3 vs Load", "H2S vs Load"],
+        horizontal=True,
+        key="ops_signal_mode",
+    )
+    on_events, off_events = detect_transitions(master_df, EVENT_COLUMNS[event_family])
+    event_times = on_events if event_direction == "ON" else off_events
+    if len(event_times) == 0:
+        st.warning("No events found for this selection.")
+    else:
+        st.metric("Available events", len(event_times))
+        event_time = st.selectbox("Event timestamp", list(event_times), format_func=lambda x: x.strftime("%Y-%m-%d %H:%M"), key="ops_event_time")
+        window_df = master_df.loc[event_time - WINDOW_48H : event_time + WINDOW_48H].copy()
+        window_df["minutes_from_event"] = (window_df.index - event_time).total_seconds() / 60
+        pairs = {
+            "NH3 vs H2S": (NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)", False),
+            "NH3 vs Temperature": (NH3, TEMP_NH3, "NH₃ (ppm)", "Temperature (°F)", False),
+            "H2S vs Temperature": (H2S, TEMP_H2S, "H₂S (ppm)", "Temperature (°F)", False),
+            "NH3 vs Load": (NH3, "transferred_lbs_vol", "NH₃ (ppm)", "Transferred Vol (lbs/min equiv)", True),
+            "H2S vs Load": (H2S, "transferred_lbs_vol", "H₂S (ppm)", "Transferred Vol (lbs/min equiv)", True),
+        }
+        y1, y2, l1, l2, bar = pairs[signal_mode]
+        st.plotly_chart(
+            event_window_figure(window_df, y1, y2, l1, l2, f"{signal_mode} Around {event_family} {event_direction}", bar=bar),
+            use_container_width=True,
+        )
+
+    render_section_intro(
+        "Repeated Event Response",
+        "This view summarizes whether similar transitions tend to produce a repeatable odor response across the reporting window.",
+    )
+    s1, s2, s3 = st.columns(3)
+    chem = s1.selectbox("Chemical", list(EVENT_COLUMNS.keys()), key="ops_study_chem")
+    event_type = s2.selectbox("Event type", ["ON", "OFF"], key="ops_study_type")
+    signal_label = s3.selectbox("Signal", ["NH3", "H2S"], key="ops_study_signal")
+    signal_col = NH3 if signal_label == "NH3" else H2S
+    summary, aligned_df, pretrend_ok = compute_event_study_summary(master_df, chem, event_type, signal_col)
+    if summary is None or summary.empty:
+        st.warning("No aligned event windows were available for this selection.")
+    else:
+        st.plotly_chart(
+            event_study_figure(summary, f"{signal_label} Response Around {chem} {event_type}", f"{signal_label} (ppm)"),
+            use_container_width=True,
+        )
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Events aligned", aligned_df.shape[1])
+        m2.metric("Median at event", f"{summary.loc[0, 'median']:.2f}" if 0 in summary.index else "NA")
+        m3.metric("Pretrend stable", "Yes" if pretrend_ok else "No")
+        m4.metric("Window", "±72h")
+
+    render_section_intro(
+        "Cross-Transition Comparison",
+        "Use side-by-side windows to compare whether Ferric and HCl changes produce similar or distinct operational signatures.",
+    )
+    compare_options = {
+        "NH3 vs H2S": (NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)"),
+        "NH3 vs Temperature": (NH3, TEMP_NH3, "NH₃ (ppm)", "Temperature (°F)"),
+        "H2S vs Temperature": (H2S, TEMP_H2S, "H₂S (ppm)", "Temperature (°F)"),
+        "NH3 vs Sludge Flow": (NH3, FLOW, "NH₃ (ppm)", "Sludge Flow (GPM)"),
+        "H2S vs Sludge Flow": (H2S, FLOW, "H₂S (ppm)", "Sludge Flow (GPM)"),
+    }
+    choice = st.selectbox("Comparison view", list(compare_options.keys()), key="ops_compare_choice")
+    y1, y2, y1_label, y2_label = compare_options[choice]
+    compare_events = {}
+    for chem_name, col in EVENT_COLUMNS.items():
+        on_events, off_events = detect_transitions(master_df, col)
+        if len(off_events) > 0:
+            compare_events[f"{chem_name} OFF"] = off_events[0]
+        if len(on_events) > 0:
+            compare_events[f"{chem_name} ON"] = on_events[0]
+    ordered = {k: compare_events[k] for k in ["Ferric OFF", "Ferric ON", "HCl OFF", "HCl ON"] if k in compare_events}
+    if len(ordered) == 0:
+        st.warning("No transition windows available.")
+    else:
+        event_windows = {}
+        for event_name, center in ordered.items():
+            w = master_df.loc[center - WINDOW_48H : center + WINDOW_48H].copy()
+            if not w.empty:
+                w["minutes"] = (w.index - center).total_seconds() / 60
+            event_windows[event_name] = w
+        st.plotly_chart(
+            shared_multi_panel_figure(
+                master_df,
+                event_windows,
+                y1,
+                y2,
+                y1_label,
+                y2_label,
+                f"{choice} Across Operational Transitions",
+            ),
+            use_container_width=True,
+        )
 
 
 # --------------------------------------------------
@@ -1393,13 +1818,13 @@ elif page == "Transition Comparison":
 # --------------------------------------------------
 # AGGREGATES & COVERAGE
 # --------------------------------------------------
-elif page == "Aggregates & Coverage":
+elif page == "Performance & Coverage":
     render_page_header(
         "Aggregates & Coverage",
         "Daily, monthly, weekday, and coverage views recalculated from the current time filter so you can understand both signal level and data completeness.",
     )
     st.caption("Aggregate views are recalculated from the currently filtered daily window.")
-    render_page_notes("Aggregates & Coverage")
+    render_page_notes("Performance & Coverage")
     render_context_band(
         start_ts,
         end_ts,
@@ -1452,6 +1877,29 @@ elif page == "Aggregates & Coverage":
             if coverage_cols:
                 st.line_chart(daily_df[coverage_cols])
                 st.dataframe(daily_df[coverage_cols + available_columns(daily_df, ["n_obs_nh3", "n_obs_h2s", "n_obs_water"])], use_container_width=True, height=260)
+
+    render_section_intro(
+        "Relationship Screening",
+        "Use the correlation matrix and scatter view to support a performance narrative with simple relationship checks between odor, throughput, and operating context.",
+    )
+    analysis_df = daily_df.copy() if daily_df is not None else master_df.resample("1D").mean(numeric_only=True)
+    analysis_df = analysis_df.copy()
+    numeric_cols = [c for c in analysis_df.columns if pd.api.types.is_numeric_dtype(analysis_df[c])]
+    default_corr = [c for c in [NH3, H2S, "total_gpm", "transferred_lbs_vol_daily", "transferred_lbs_vol", "nh3_std", "h2s_std", "ferric_active_lbs_per_day"] if c in numeric_cols]
+    selected = st.multiselect("Columns for heatmap", numeric_cols, default=default_corr[: min(len(default_corr), 8)], key="perf_heatmap_cols")
+    if len(selected) >= 2:
+        st.plotly_chart(correlation_heatmap(analysis_df, selected), use_container_width=True)
+    else:
+        st.info("Select at least two columns for the correlation heatmap.")
+
+    scatter_source = hourly_df if hourly_df is not None else analysis_df
+    scatter_cols = [c for c in scatter_source.columns if pd.api.types.is_numeric_dtype(scatter_source[c])]
+    x_default = "lbs_volatile" if "lbs_volatile" in scatter_cols else scatter_cols[0]
+    y_default = H2S if H2S in scatter_cols else scatter_cols[min(1, len(scatter_cols)-1)]
+    x_col = st.selectbox("Scatter x", scatter_cols, index=scatter_cols.index(x_default) if x_default in scatter_cols else 0, key="perf_scatter_x")
+    y_col = st.selectbox("Scatter y", scatter_cols, index=scatter_cols.index(y_default) if y_default in scatter_cols else 0, key="perf_scatter_y")
+    color_col = st.selectbox("Color by (optional)", [None] + scatter_cols, index=0, key="perf_scatter_color")
+    st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=f"{y_col} vs {x_col}"), use_container_width=True)
 
 
 # --------------------------------------------------
@@ -1511,12 +1959,12 @@ elif page == "Correlation & Load Analysis":
 # --------------------------------------------------
 # ANOMALIES
 # --------------------------------------------------
-elif page == "Anomalies":
+elif page == "Diagnostics & Data":
     render_page_header(
         "Anomalies",
         "Use rolling z-scores to identify unusual observations in odor, temperature, flow, or load-normalized signals within the filtered study window.",
     )
-    render_page_notes("Anomalies")
+    render_page_notes("Diagnostics & Data")
     render_context_band(
         start_ts,
         end_ts,
@@ -1560,6 +2008,53 @@ elif page == "Anomalies":
     st.plotly_chart(z_fig, use_container_width=True)
 
     st.dataframe(anomalies.head(500), use_container_width=True, height=280)
+
+    render_section_intro(
+        "Filtered Data Explorer",
+        "Use the table view when a chart raises a question and you need to inspect underlying rows, sort extremes, or export a supporting appendix.",
+    )
+    dataset_name = st.selectbox(
+        "Dataset",
+        ["master_1min", "master_1h", "master_daily", "monthly_summary", "weekday_summary", "event_metrics"],
+        key="diag_dataset",
+    )
+    dataset_map = {
+        "master_1min": master_df,
+        "master_1h": hourly_df,
+        "master_daily": daily_df,
+        "monthly_summary": monthly_df,
+        "weekday_summary": weekday_df,
+        "event_metrics": event_metrics_df,
+    }
+    view_df = dataset_map[dataset_name]
+    if view_df is None:
+        st.info(f"{dataset_name} is not available.")
+    else:
+        numeric_candidates = [c for c in view_df.columns if pd.api.types.is_numeric_dtype(view_df[c])]
+        show_cols = st.multiselect("Columns", list(view_df.columns), default=list(view_df.columns[: min(12, len(view_df.columns))]), key="diag_show_cols")
+        if not show_cols:
+            show_cols = list(view_df.columns)
+        max_rows = st.slider("Rows", min_value=20, max_value=2000, value=200, step=20, key="diag_rows")
+        sort_col = st.selectbox("Sort by", [None] + list(view_df.columns), index=0, key="diag_sort")
+        display_df = view_df.copy()
+        if sort_col is not None:
+            try:
+                display_df = display_df.sort_values(sort_col, ascending=False)
+            except Exception:
+                pass
+        preview_df = display_df[show_cols].head(max_rows)
+        st.download_button(
+            "Download selection as CSV",
+            preview_df.to_csv().encode("utf-8"),
+            file_name=f"{dataset_name}_{start_ts.date()}_{end_ts.date()}.csv",
+            mime="text/csv",
+        )
+        st.dataframe(preview_df, use_container_width=True, height=420)
+        if len(numeric_candidates) >= 1:
+            dist_col = st.selectbox("Numeric column", numeric_candidates, key="diag_dist_col")
+            hist = go.Figure(data=[go.Histogram(x=view_df[dist_col].dropna(), nbinsx=50)])
+            hist.update_layout(title=f"Distribution of {dist_col}", template="plotly_white")
+            st.plotly_chart(hist, use_container_width=True)
 
 
 # --------------------------------------------------

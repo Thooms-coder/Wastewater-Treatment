@@ -7,8 +7,49 @@ from plotly.subplots import make_subplots
 DEFAULT_LAYOUT = {
     "template": "plotly_white",
     "hovermode": "x unified",
-    "legend": dict(orientation="h"),
+    "legend": dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0,
+        bgcolor="rgba(255,255,255,0.72)",
+        bordercolor="rgba(24,35,31,0.08)",
+        borderwidth=1,
+        font=dict(size=11),
+    ),
+    "paper_bgcolor": "rgba(255,255,255,0)",
+    "plot_bgcolor": "#fcfaf5",
+    "font": dict(color="#18231f", family="IBM Plex Sans, Arial, sans-serif"),
 }
+
+PRIMARY_COLOR = "#1f6a53"
+SECONDARY_COLOR = "#8b5e1a"
+TERTIARY_COLOR = "#4b645b"
+GRID_COLOR = "rgba(24,35,31,0.08)"
+EVENT_LINE_COLOR = "rgba(31,106,83,0.28)"
+PLANT_EVENT_COLOR = "#8f3f2b"
+
+
+def apply_executive_axes(fig):
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor=GRID_COLOR,
+        zeroline=False,
+        linecolor="rgba(24,35,31,0.18)",
+        tickfont=dict(size=11),
+        title_font=dict(size=12),
+    )
+    fig.update_yaxes(
+        showgrid=True,
+        gridcolor=GRID_COLOR,
+        zeroline=False,
+        linecolor="rgba(24,35,31,0.18)",
+        tickfont=dict(size=11),
+        title_font=dict(size=12),
+    )
+    fig.update_layout(title=dict(font=dict(size=20, color="#18231f"), x=0.01, xanchor="left"))
+    return fig
 
 
 def has_data(df, col):
@@ -18,7 +59,7 @@ def has_data(df, col):
 def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant_events=None):
     for name, times in events.items():
         for t in times:
-            fig.add_vline(x=t, line_dash="dash", line_width=1, opacity=0.35)
+            fig.add_vline(x=t, line_dash="dash", line_width=1, line_color=EVENT_LINE_COLOR, opacity=0.8)
             if include_labels:
                 fig.add_annotation(
                     x=t,
@@ -29,14 +70,15 @@ def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant
                     showarrow=False,
                     xanchor="left",
                     yanchor="top",
-                    font=dict(size=8),
+                    font=dict(size=8, color="#48665b"),
+                    bgcolor="rgba(252,250,245,0.78)",
                 )
 
     if not plant_events:
         return fig
 
     for name, t in plant_events.items():
-        fig.add_vline(x=t, line_dash="dot", line_color="purple", line_width=1.5)
+        fig.add_vline(x=t, line_dash="dot", line_color=PLANT_EVENT_COLOR, line_width=1.5)
         if include_labels:
             fig.add_annotation(
                 x=t,
@@ -47,7 +89,8 @@ def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant
                 showarrow=False,
                 xanchor="left",
                 yanchor="top",
-                font=dict(size=9, color="purple"),
+                font=dict(size=9, color=PLANT_EVENT_COLOR),
+                bgcolor="rgba(252,250,245,0.84)",
             )
 
     return fig
@@ -96,7 +139,7 @@ def dual_axis_figure(
             y=plot_df[y1_col],
             mode="lines",
             name=y1_label,
-            line=dict(width=2),
+            line=dict(width=2.6, color=PRIMARY_COLOR),
             yaxis="y",
             customdata=plot_df["_customdata"] if "_customdata" in plot_df.columns else None,
             hovertemplate=y1_hover + f"{y1_label}: " + "%{y:.2f}<extra></extra>",
@@ -112,6 +155,7 @@ def dual_axis_figure(
                     y=plot_df[y2_col],
                     name=y2_label,
                     yaxis="y2",
+                    marker=dict(color="rgba(139, 94, 26, 0.55)", line=dict(color=SECONDARY_COLOR, width=0.8)),
                     hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
                 )
             )
@@ -122,7 +166,7 @@ def dual_axis_figure(
                     y=plot_df[y2_col],
                     mode="lines",
                     name=y2_label,
-                    line=dict(width=1.6, dash="dot"),
+                    line=dict(width=2, dash="dot", color=SECONDARY_COLOR),
                     yaxis="y2",
                     hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
                 )
@@ -142,6 +186,7 @@ def dual_axis_figure(
         margin=margin or dict(l=100, r=100, t=100, b=100),
         **DEFAULT_LAYOUT,
     )
+    apply_executive_axes(fig)
 
     if add_events:
         add_event_lines_plotly(fig, add_events, plant_events=plant_events)
@@ -166,7 +211,7 @@ def event_window_figure(window_df, y1, y2, y1_label, y2_label, title, *, bar=Fal
         y2_hover_prefix="",
         rangeslider=False,
     )
-    fig.add_vline(x=0, line_dash="dash", line_color="black")
+    fig.add_vline(x=0, line_dash="dash", line_color=TERTIARY_COLOR)
     return fig
 
 
@@ -182,7 +227,7 @@ def event_study_figure(summary, title, ylabel):
             y=summary["q25"],
             mode="lines",
             fill="tonexty",
-            fillcolor="rgba(70,130,180,0.3)",
+            fillcolor="rgba(31,106,83,0.18)",
             line=dict(width=0),
             name="IQR (25–75%)",
             hovertemplate="Q25: %{y:.2f}<extra></extra>",
@@ -194,11 +239,11 @@ def event_study_figure(summary, title, ylabel):
             y=summary["median"],
             mode="lines",
             name="Median",
-            line=dict(width=3, color="black"),
+            line=dict(width=3, color=PRIMARY_COLOR),
             hovertemplate="Median: %{y:.2f}<br>Δmin: %{x}<extra></extra>",
         )
     )
-    fig.add_vline(x=0, line_dash="dash", line_color="red", annotation_text="Event", annotation_position="top")
+    fig.add_vline(x=0, line_dash="dash", line_color=SECONDARY_COLOR, annotation_text="Event", annotation_position="top")
     fig.update_layout(
         title=title,
         xaxis_title="Minutes from event",
@@ -206,6 +251,7 @@ def event_study_figure(summary, title, ylabel):
         margin=dict(l=100, r=100, t=100, b=100),
         **DEFAULT_LAYOUT,
     )
+    apply_executive_axes(fig)
     fig.update_xaxes(rangeslider_visible=True)
     return fig
 
@@ -341,6 +387,7 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
                     y=slope * xs + intercept,
                     mode="lines",
                     name=f"Trend (slope={slope:.3f})",
+                    line=dict(color=SECONDARY_COLOR, width=2.5),
                 )
             )
 
@@ -351,6 +398,7 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
         margin=dict(l=100, r=100, t=100, b=100),
         **DEFAULT_LAYOUT,
     )
+    apply_executive_axes(fig)
     return fig
 
 
@@ -374,7 +422,7 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
                 y=window_df[y1],
                 mode="lines",
                 name=y1_label,
-                line=dict(width=2),
+                line=dict(width=2.4, color=PRIMARY_COLOR),
                 showlegend=(r == 1 and c == 1),
                 hovertemplate=f"{y1_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
             ),
@@ -388,7 +436,7 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
                 y=window_df[y2],
                 mode="lines",
                 name=y2_label,
-                line=dict(dash="dot"),
+                line=dict(dash="dot", color=SECONDARY_COLOR, width=2),
                 showlegend=(r == 1 and c == 1),
                 hovertemplate=f"{y2_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
             ),
@@ -396,10 +444,11 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
             col=c,
             secondary_y=True,
         )
-        fig.add_vline(x=0, line_dash="dash", line_color="black", row=r, col=c)
+        fig.add_vline(x=0, line_dash="dash", line_color=TERTIARY_COLOR, row=r, col=c)
         fig.update_yaxes(title_text=y1_label, row=r, col=c, secondary_y=False)
         fig.update_yaxes(title_text=y2_label, row=r, col=c, secondary_y=True)
 
     fig.update_layout(title=title, height=800, **DEFAULT_LAYOUT)
     fig.update_xaxes(title_text="Minutes from Event", rangeslider_visible=True)
+    apply_executive_axes(fig)
     return fig
