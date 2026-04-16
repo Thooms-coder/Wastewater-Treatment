@@ -128,6 +128,37 @@ st.markdown(
         background: rgba(255,255,255,0.04);
     }
 
+    [data-testid="stSidebar"] [data-baseweb="select"] > div,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] > div {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] input,
+    [data-testid="stSidebar"] [data-baseweb="select"] div,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] input,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] div,
+    [data-testid="stSidebar"] [data-baseweb="select"] span,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] span {
+        color: #f7fbf8 !important;
+        -webkit-text-fill-color: #f7fbf8 !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] svg,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] svg {
+        fill: #f7fbf8;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="tag"] {
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    [data-testid="stSidebar"] input::placeholder {
+        color: rgba(247, 251, 248, 0.72) !important;
+        -webkit-text-fill-color: rgba(247, 251, 248, 0.72) !important;
+    }
+
     [data-testid="stMetric"] {
         background: var(--panel);
         border: 1px solid var(--line);
