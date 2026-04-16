@@ -213,7 +213,6 @@ def event_study_figure(summary, title, ylabel):
 def correlation_heatmap(df, cols, title="Correlation Heatmap"):
     corr = df[cols].corr(numeric_only=True)
     labels = [str(col).replace("_", " ") for col in corr.columns]
-    text = np.round(corr.values, 2)
     fig = go.Figure(
         data=go.Heatmap(
             z=corr.values,
@@ -229,9 +228,6 @@ def correlation_heatmap(df, cols, title="Correlation Heatmap"):
                 [0.82, "#3e7f6a"],
                 [1.0, "#1f6a53"],
             ],
-            text=text,
-            texttemplate="%{text:.2f}",
-            textfont={"size": 11},
             xgap=2,
             ygap=2,
             colorbar={
@@ -252,19 +248,27 @@ def correlation_heatmap(df, cols, title="Correlation Heatmap"):
     )
     fig.update_xaxes(side="bottom", tickangle=-35)
     fig.update_yaxes(autorange="reversed")
+
+    for i, y_label in enumerate(labels):
+        for j, x_label in enumerate(labels):
+            value = corr.values[i, j]
+            font_color = "#fffdf7" if abs(value) >= 0.45 else "#18231f"
+            fig.add_annotation(
+                x=x_label,
+                y=y_label,
+                text=f"{value:.2f}",
+                showarrow=False,
+                font=dict(size=11, color=font_color),
+            )
     return fig
 
 
 def heatmap_matrix(matrix, title=""):
-    text = np.round(matrix.values, 2)
     fig = go.Figure(
         data=go.Heatmap(
             z=matrix.values,
             x=list(matrix.columns),
             y=list(matrix.index),
-            text=text,
-            texttemplate="%{text:.2f}",
-            textfont={"size": 11},
             xgap=1,
             ygap=1,
             colorscale="YlGnBu",
@@ -280,6 +284,23 @@ def heatmap_matrix(matrix, title=""):
         height=500,
         **DEFAULT_LAYOUT,
     )
+
+    values = np.asarray(matrix.values, dtype=float)
+    vmax = np.nanmax(np.abs(values)) if values.size else 0
+    threshold = 0.45 * vmax if vmax else 0
+    for i, row_label in enumerate(matrix.index):
+        for j, col_label in enumerate(matrix.columns):
+            value = matrix.iloc[i, j]
+            if pd.isna(value):
+                continue
+            font_color = "#fffdf7" if abs(value) >= threshold else "#18231f"
+            fig.add_annotation(
+                x=col_label,
+                y=row_label,
+                text=f"{value:.2f}",
+                showarrow=False,
+                font=dict(size=11, color=font_color),
+            )
     return fig
 
 
