@@ -11,9 +11,19 @@ Author: Mutsa Mungoshi
 
 from pathlib import Path
 import pandas as pd
-import plotly.graph_objects as go
 
+from scripts.analytics import detect_all_transitions
+from scripts.constants import (
+    EVENT_COLUMNS,
+    FLOW,
+    H2S,
+    NH3,
+    TEMP_H2S,
+    TEMP_NH3,
+    WINDOW_48H as WINDOW,
+)
 from scripts.paths import PROCESSED_DATA_DIR
+from scripts.plotting import event_window_figure
 
 
 # ---------------------------------------------------------------------
@@ -24,40 +34,8 @@ FIG_DIR = PROJECT_ROOT / "figures" / "event_windows"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 MASTER_PATH = PROCESSED_DATA_DIR / "master_1min.parquet"
-
-WINDOW = pd.Timedelta(hours=48)
-
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-NH3_TEMP = "nh3_temperature_°f"
-H2S_TEMP = "h2s_temperature_°f"
-FLOW = "east_sludge_out_gpm_combined"
-
-EVENT_COLUMNS = {
-    "Ferric": "ferric_available",
-    "HCl": "hcl_available",
-}
-
-
-# ---------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------
-def detect_transitions(df):
-    events = {}
-
-    for chem_name, col in EVENT_COLUMNS.items():
-        if col not in df.columns:
-            continue
-
-        diff = df[col].diff()
-
-        on_times = df.index[diff == 1]
-        off_times = df.index[diff == -1]
-
-        events[f"{chem_name}_ON"] = list(on_times)
-        events[f"{chem_name}_OFF"] = list(off_times)
-
-    return events
+NH3_TEMP = TEMP_NH3
+H2S_TEMP = TEMP_H2S
 
 
 def extract_window(df, center_time):
@@ -78,72 +56,8 @@ def safe_column(df, col):
 # ---------------------------------------------------------------------
 # 🔥 NEW: Plotly Dual Axis Plot
 # ---------------------------------------------------------------------
-def dual_axis_plot_plotly(df, y1, y2,
-                         y1_label, y2_label,
-                         title, fname,
-                         bar=False):
-
-    fig = go.Figure()
-
-    # ---------------- Primary axis ----------------
-    fig.add_trace(
-        go.Scatter(
-            x=df["minutes_from_event"],
-            y=df[y1],
-            mode="lines",
-            name=y1_label,
-            line=dict(width=2),
-            customdata=df.index,
-            hovertemplate="Time: %{customdata}<br>"
-                          + f"{y1_label}: " + "%{y:.2f}<br>"
-                          + "Δmin: %{x}<extra></extra>",
-        )
-    )
-
-    # ---------------- Secondary axis ----------------
-    if bar:
-        fig.add_trace(
-            go.Bar(
-                x=df["minutes_from_event"],
-                y=df[y2],
-                name=y2_label,
-                opacity=0.6,
-                yaxis="y2",
-                hovertemplate=f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-            )
-        )
-    else:
-        fig.add_trace(
-            go.Scatter(
-                x=df["minutes_from_event"],
-                y=df[y2],
-                mode="lines",
-                name=y2_label,
-                yaxis="y2",
-                line=dict(dash="dot"),
-                hovertemplate=f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-            )
-        )
-
-    # ---------------- Layout ----------------
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        xaxis=dict(title="Minutes from Event"),
-        yaxis=dict(title=y1_label),
-        yaxis2=dict(
-            title=y2_label,
-            overlaying="y",
-            side="right"
-        ),
-        legend=dict(orientation="h"),
-    )
-
-    # Event marker
-    fig.add_vline(x=0, line_dash="dash", line_color="black")
-
-    # Save interactive HTML
+def dual_axis_plot_plotly(df, y1, y2, y1_label, y2_label, title, fname, bar=False):
+    fig = event_window_figure(df, y1, y2, y1_label, y2_label, title, bar=bar)
     fig.write_html(FIG_DIR / fname.replace(".png", ".html"))
 
 
@@ -174,7 +88,7 @@ def run_event_window_plots():
     else:
         df["transferred_lbs_vol"] = 0
 
-    events = detect_transitions(df)
+    events = detect_all_transitions(df, EVENT_COLUMNS)
 
     for event_name, times in events.items():
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
 
+from scripts.constants import H2S, NH3, WATER_COLS as BASE_WATER_COLS
 from scripts.paths import PROCESSED_DATA_DIR
 
 DAILY_PATH = PROCESSED_DATA_DIR / "master_daily.parquet"
@@ -8,17 +9,7 @@ MONTHLY_PATH = PROCESSED_DATA_DIR / "monthly_summary.parquet"
 WEEKDAY_PATH = PROCESSED_DATA_DIR / "weekday_summary.parquet"
 LEGACY_BUNDLE_PATH = PROCESSED_DATA_DIR / "aggregates.parquet"
 
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-
-WATER_COLS = [
-    "east_sludge_out_gpm",
-    "west_sludge_out_gpm",
-    "digesters_sludge_out_flow",
-    "east_sludge_out_gpm_combined",
-    "total_gpm",
-    "transferred_lbs_vol_daily",
-]
+WATER_COLS = BASE_WATER_COLS + ["total_gpm", "transferred_lbs_vol_daily"]
 
 PROCESS_COLS = [
     "ferric_available",

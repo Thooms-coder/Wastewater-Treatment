@@ -8,7 +8,49 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
+from scripts.analytics import (
+    add_operational_features as shared_add_operational_features,
+    add_zscore as shared_add_zscore,
+    aggregate_event_metrics as shared_aggregate_event_metrics,
+    check_pretrend as shared_check_pretrend,
+    compute_single_event_metrics as shared_compute_single_event_metrics,
+    detect_all_transitions as shared_detect_all_transitions,
+    detect_anomalies as shared_detect_anomalies,
+    detect_transitions as shared_detect_transitions,
+    extract_event_window as shared_extract_event_window,
+    summarize_event as shared_summarize_event,
+    window_slice as shared_window_slice,
+)
+from scripts.constants import (
+    BASELINE_WINDOW,
+    DEFAULT_PRIMARY,
+    DIG_GPM,
+    EAST_GPM,
+    EVENT_COLUMNS,
+    EVENT_STUDY_WINDOW,
+    FLOW,
+    H2S,
+    NH3,
+    PLANT_EVENTS,
+    POST_WINDOW,
+    PRETREND_TOL,
+    PRETREND_WINDOW,
+    RAW_H2S,
+    RAW_NH3,
+    TEMP_H2S,
+    TEMP_NH3,
+    WEST_GPM,
+    WINDOW_48H,
+)
+from scripts.plotting import (
+    add_event_lines_plotly as shared_add_event_lines_plotly,
+    correlation_heatmap as shared_correlation_heatmap,
+    dual_axis_figure as shared_dual_axis_figure,
+    event_study_figure as shared_event_study_figure,
+    event_window_figure as shared_event_window_figure,
+    multi_panel_figure as shared_multi_panel_figure,
+    scatter_with_trend as shared_scatter_with_trend,
+)
 
 try:
     from scripts.paths import PROCESSED_DATA_DIR
@@ -25,36 +67,6 @@ MASTER_DAILY = PROCESSED_DATA_DIR / "master_daily.parquet"
 MONTHLY_PATH = PROCESSED_DATA_DIR / "monthly_summary.parquet"
 WEEKDAY_PATH = PROCESSED_DATA_DIR / "weekday_summary.parquet"
 EVENT_METRICS_PATH = PROCESSED_DATA_DIR / "event_metrics.csv"
-
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-RAW_NH3 = "nh3_nh3_ppm"
-RAW_H2S = "h2s_h2s_ppm"
-TEMP_NH3 = "nh3_temperature_°f"
-TEMP_H2S = "h2s_temperature_°f"
-FLOW = "east_sludge_out_gpm_combined"
-WEST_GPM = "west_sludge_out_gpm"
-EAST_GPM = "east_sludge_out_gpm"
-DIG_GPM = "digesters_sludge_out_flow"
-
-EVENT_COLUMNS = {
-    "Ferric": "ferric_available",
-    "HCl": "hcl_available",
-}
-
-PLANT_EVENTS = {
-    "Ferric Reduced": pd.Timestamp("2026-01-07"),
-}
-
-BASELINE_WINDOW = (-48 * 60, -12 * 60)
-POST_WINDOW = (12 * 60, 96 * 60)
-EVENT_STUDY_WINDOW = 72 * 60
-PRETREND_WINDOW = (-1440, -60)
-PRETREND_TOL = 0.1
-WINDOW_48H = pd.Timedelta(hours=48)
-
-DEFAULT_PRIMARY = [NH3, H2S, TEMP_NH3, TEMP_H2S, FLOW]
-
 
 # --------------------------------------------------
 # PAGE
@@ -121,22 +133,15 @@ def available_columns(df, candidates):
 
 
 def detect_transitions(df, column):
-    if df is None or column not in df.columns:
+    if df is None:
         return pd.Index([]), pd.Index([])
-    series = df[column].fillna(0).astype(int)
-    diff = series.diff()
-    return df.index[diff == 1], df.index[diff == -1]
+    return shared_detect_transitions(df, column)
 
 
 def detect_all_transitions(df, event_columns=EVENT_COLUMNS):
-    events = {}
     if df is None:
-        return events
-    for name, col in event_columns.items():
-        on_events, off_events = detect_transitions(df, col)
-        events[f"{name}_ON"] = sorted(set(on_events))
-        events[f"{name}_OFF"] = sorted(set(off_events))
-    return events
+        return {}
+    return shared_detect_all_transitions(df, event_columns)
 
 
 def build_events_table(df):
@@ -158,54 +163,21 @@ def build_events_table(df):
 
 
 def add_event_lines_plotly(fig, events, yref="paper", include_labels=True):
-    for name, times in events.items():
-        for t in times:
-            fig.add_vline(x=t, line_dash="dash", line_width=1, opacity=0.3)
-            if include_labels:
-                fig.add_annotation(
-                    x=t,
-                    y=1,
-                    yref=yref,
-                    text=name,
-                    textangle=-90,
-                    showarrow=False,
-                    xanchor="left",
-                    yanchor="top",
-                    font=dict(size=8),
-                )
-
-    for name, t in PLANT_EVENTS.items():
-        fig.add_vline(x=t, line_dash="dot", line_color="purple", line_width=1.5)
-        if include_labels:
-            fig.add_annotation(
-                x=t,
-                y=1,
-                yref=yref,
-                text=name,
-                textangle=-90,
-                showarrow=False,
-                xanchor="left",
-                yanchor="top",
-                font=dict(size=9, color="purple"),
-            )
+    shared_add_event_lines_plotly(
+        fig,
+        events,
+        yref=yref,
+        include_labels=include_labels,
+        plant_events=PLANT_EVENTS,
+    )
 
 
 def enrich_operational_features(df):
     if df is None:
         return None
-    df = df.copy()
-
-    for col in [WEST_GPM, EAST_GPM, DIG_GPM]:
-        if col not in df.columns:
-            df[col] = 0.0
-        df[col] = pd.to_numeric(df[col], errors="coerce").ffill().fillna(0)
-
+    df = shared_add_operational_features(df)
     if FLOW not in df.columns:
         df[FLOW] = df[[WEST_GPM, EAST_GPM, DIG_GPM]].sum(axis=1)
-
-    df["total_gpm"] = df[[WEST_GPM, EAST_GPM, DIG_GPM]].sum(axis=1)
-    k = 8.34 * 1.38 * 0.66
-    df["lbs_per_min"] = df["total_gpm"] * k
     df["transferred_lbs_vol"] = df["lbs_per_min"]
 
     eps = 1e-9
@@ -243,54 +215,15 @@ def build_hourly_table(df):
 
 
 def window_slice(series, window):
-    if series is None or series.empty:
-        return pd.Series(dtype=float)
-    return series.loc[(series.index >= window[0]) & (series.index <= window[1])]
+    return shared_window_slice(series, window)
 
 
 def compute_single_event_metrics(baseline, post):
-    if baseline.empty or post.empty:
-        return None
-
-    baseline_val = baseline.median()
-    post_val = post.median()
-    delta = post_val - baseline_val
-
-    if pd.isna(baseline_val) or baseline_val == 0:
-        pct_change = np.nan
-    else:
-        pct_change = (delta / baseline_val) * 100
-
-    below = post[post < baseline_val]
-    persistence = 0 if below.empty else below.index.max() - below.index.min()
-    time_to_min = np.nan if post.empty else post.idxmin()
-    iqr_post = post.quantile(0.75) - post.quantile(0.25)
-
-    return {
-        "baseline": baseline_val,
-        "post": post_val,
-        "delta": delta,
-        "percent_change": pct_change,
-        "time_to_min": time_to_min,
-        "persistence": persistence,
-        "post_iqr": iqr_post,
-    }
+    return shared_compute_single_event_metrics(baseline, post)
 
 
 def aggregate_event_metrics(metrics_list):
-    if not metrics_list:
-        return {}
-    df = pd.DataFrame(metrics_list)
-    return {
-        "baseline": df["baseline"].median(),
-        "post": df["post"].median(),
-        "delta": df["delta"].median(),
-        "percent_change": df["percent_change"].median(),
-        "time_to_min": df["time_to_min"].median(),
-        "persistence": df["persistence"].median(),
-        "post_iqr": df["post_iqr"].median(),
-        "n_events": len(df),
-    }
+    return shared_aggregate_event_metrics(metrics_list)
 
 
 @st.cache_data(show_spinner=False)
@@ -340,34 +273,17 @@ def compute_event_metrics_table(df):
 
 
 def extract_event_window(df, event_time, column, window_minutes=EVENT_STUDY_WINDOW):
-    if df is None or column not in df.columns:
+    if df is None:
         return None
-    start = event_time - pd.Timedelta(minutes=window_minutes)
-    end = event_time + pd.Timedelta(minutes=window_minutes)
-    subset = df.loc[start:end, column].copy()
-    if subset.empty:
-        return None
-    aligned_index = ((subset.index - event_time).total_seconds() / 60).astype(int)
-    subset.index = aligned_index
-    return subset
+    return shared_extract_event_window(df, event_time, column, window_minutes)
 
 
 def summarize_event(aligned_df):
-    return pd.DataFrame(
-        {
-            "median": aligned_df.median(axis=1),
-            "q25": aligned_df.quantile(0.25, axis=1),
-            "q75": aligned_df.quantile(0.75, axis=1),
-        }
-    )
+    return shared_summarize_event(aligned_df)
 
 
 def check_pretrend(summary, window=PRETREND_WINDOW, tolerance=PRETREND_TOL):
-    pre = summary.loc[window[0] : window[1], "median"]
-    if pre.empty:
-        return True
-    variation = pre.max() - pre.min()
-    return variation <= tolerance
+    return shared_check_pretrend(summary, window=window, tolerance=tolerance)
 
 
 @st.cache_data(show_spinner=False)
@@ -397,18 +313,13 @@ def compute_event_study_summary(df, chem_name, event_type, signal_col):
 def add_zscore(df, col, window=1440):
     if df is None or col not in df.columns:
         return pd.Series(dtype=float)
-    rolling_mean = df[col].rolling(window, min_periods=max(10, window // 10)).mean()
-    rolling_std = df[col].rolling(window, min_periods=max(10, window // 10)).std()
-    return (df[col] - rolling_mean) / rolling_std.replace(0, np.nan)
+    return shared_add_zscore(df, col, window=window)
 
 
 def detect_anomalies(df, col, threshold=3.0, window=1440):
-    if df is None or col not in df.columns:
+    if df is None:
         return pd.DataFrame()
-    z = add_zscore(df, col, window=window)
-    out = df.loc[z.abs() >= threshold, [col]].copy()
-    out["z_score"] = z.loc[out.index]
-    return out.sort_values("z_score", key=np.abs, ascending=False)
+    return shared_detect_anomalies(df, col, threshold=threshold, window=window)
 
 
 def build_month_labels(index_like):
@@ -419,237 +330,109 @@ def build_month_labels(index_like):
     return [month_names.get(int(x), str(x)) for x in index_like]
 
 
+def numeric_columns(df):
+    if df is None:
+        return []
+    return [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+
+
+def filter_time_indexed_df(df, start_ts, end_ts):
+    if df is None or not isinstance(df.index, pd.DatetimeIndex):
+        return df
+    return df.loc[(df.index >= start_ts) & (df.index <= end_ts)].copy()
+
+
+def build_period_summaries(daily):
+    if daily is None or daily.empty or not isinstance(daily.index, pd.DatetimeIndex):
+        return None, None
+
+    daily = daily.sort_index().copy()
+    daily["month"] = daily.index.month
+    daily["weekday"] = daily.index.dayofweek
+
+    numeric_cols = numeric_columns(daily)
+    excluded = {"month", "weekday"}
+    agg_cols = [c for c in numeric_cols if c not in excluded]
+
+    if not agg_cols:
+        return None, None
+
+    monthly = daily.groupby("month")[agg_cols].mean().sort_index()
+    weekday = daily.groupby("weekday")[agg_cols].mean().sort_index()
+
+    monthly_rename = {}
+    if NH3 in monthly.columns:
+        monthly_rename[NH3] = "nh3_monthly_mean"
+    if H2S in monthly.columns:
+        monthly_rename[H2S] = "h2s_monthly_mean"
+    if "total_gpm" in monthly.columns:
+        monthly_rename["total_gpm"] = "total_gpm_monthly_mean"
+    if "transferred_lbs_vol_daily" in monthly.columns:
+        monthly_rename["transferred_lbs_vol_daily"] = "transferred_lbs_vol_monthly_mean"
+    monthly = monthly.rename(columns=monthly_rename)
+    monthly["days_in_data"] = daily.groupby("month").size()
+
+    weekday_rename = {}
+    if NH3 in weekday.columns:
+        weekday_rename[NH3] = "nh3_weekday_mean"
+    if H2S in weekday.columns:
+        weekday_rename[H2S] = "h2s_weekday_mean"
+    if "total_gpm" in weekday.columns:
+        weekday_rename["total_gpm"] = "total_gpm_weekday_mean"
+    if "transferred_lbs_vol_daily" in weekday.columns:
+        weekday_rename["transferred_lbs_vol_daily"] = "transferred_lbs_vol_weekday_mean"
+    weekday = weekday.rename(columns=weekday_rename)
+    weekday["days_in_data"] = daily.groupby("weekday").size()
+    weekday["weekday_name"] = [
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    ][: len(weekday)]
+
+    return monthly, weekday
+
+
+def metric_value(df, col, fn="mean", fmt="{:.2f}"):
+    if not has_data(df, col):
+        return "NA"
+    series = df[col].dropna()
+    value = getattr(series, fn)() if isinstance(fn, str) else fn(series)
+    return fmt.format(value)
+
+
+def coverage_value(df, col, expected_points):
+    if not has_data(df, col) or expected_points <= 0:
+        return "NA"
+    pct = (df[col].notna().sum() / expected_points) * 100
+    return f"{pct:.1f}%"
+
+
 def dual_axis_figure(df, y1_col, y2_col, y1_label, y2_label, title, add_events=None, bar_second=False):
-    fig = go.Figure()
-
-    if not has_data(df, y1_col):
-        return fig
-
-    plot_df = df[[c for c in [y1_col, y2_col] if c in df.columns]].dropna(how="all").copy()
-    if plot_df.empty:
-        return fig
-
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df.index,
-            y=plot_df[y1_col],
-            mode="lines",
-            name=y1_label,
-            line=dict(width=2),
-            yaxis="y",
-            hovertemplate="Time: %{x}<br>" + f"{y1_label}: " + "%{y:.2f}<extra></extra>",
-        )
+    return shared_dual_axis_figure(
+        df,
+        y1_col,
+        y2_col,
+        y1_label,
+        y2_label,
+        title,
+        add_events=add_events,
+        plant_events=PLANT_EVENTS if add_events else None,
+        bar_second=bar_second,
     )
-
-    if y2_col in plot_df.columns:
-        if bar_second:
-            fig.add_trace(
-                go.Bar(
-                    x=plot_df.index,
-                    y=plot_df[y2_col],
-                    name=y2_label,
-                    yaxis="y2",
-                    hovertemplate="Time: %{x}<br>" + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-                )
-            )
-        else:
-            fig.add_trace(
-                go.Scatter(
-                    x=plot_df.index,
-                    y=plot_df[y2_col],
-                    mode="lines",
-                    name=y2_label,
-                    line=dict(width=1.6, dash="dot"),
-                    yaxis="y2",
-                    hovertemplate="Time: %{x}<br>" + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-                )
-            )
-
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        xaxis=dict(title="Date / Time"),
-        yaxis=dict(title=y1_label),
-        yaxis2=dict(title=y2_label, overlaying="y", side="right"),
-        legend=dict(orientation="h"),
-        barmode="overlay" if bar_second else None,
-        margin=dict(l=100, r=100, t=100, b=100),
-    )
-
-    if add_events:
-        add_event_lines_plotly(fig, add_events)
-    fig.update_xaxes(rangeslider_visible=True)
-    return fig
 
 
 def event_window_figure(window_df, y1, y2, y1_label, y2_label, title, bar=False):
-    fig = go.Figure()
-
-    if window_df.empty or y1 not in window_df.columns:
-        return fig
-
-    fig.add_trace(
-        go.Scatter(
-            x=window_df["minutes_from_event"],
-            y=window_df[y1],
-            mode="lines",
-            name=y1_label,
-            line=dict(width=2),
-            customdata=window_df.index,
-            hovertemplate="Time: %{customdata}<br>" + f"{y1_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
-        )
-    )
-
-    if y2 in window_df.columns:
-        if bar:
-            fig.add_trace(
-                go.Bar(
-                    x=window_df["minutes_from_event"],
-                    y=window_df[y2],
-                    name=y2_label,
-                    opacity=0.6,
-                    yaxis="y2",
-                    hovertemplate=f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-                )
-            )
-        else:
-            fig.add_trace(
-                go.Scatter(
-                    x=window_df["minutes_from_event"],
-                    y=window_df[y2],
-                    mode="lines",
-                    name=y2_label,
-                    line=dict(dash="dot"),
-                    yaxis="y2",
-                    hovertemplate=f"{y2_label}: " + "%{y:.2f}<extra></extra>",
-                )
-            )
-
-    fig.add_vline(x=0, line_dash="dash", line_color="black")
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        xaxis=dict(title="Minutes from Event"),
-        yaxis=dict(title=y1_label),
-        yaxis2=dict(title=y2_label, overlaying="y", side="right"),
-        legend=dict(orientation="h"),
-        margin=dict(l=100, r=100, t=100, b=100),
-    )
-    return fig
+    return shared_event_window_figure(window_df, y1, y2, y1_label, y2_label, title, bar=bar)
 
 
 def event_study_figure(summary, title, ylabel):
-    fig = go.Figure()
-    if summary is None or summary.empty:
-        return fig
-
-    fig.add_trace(go.Scatter(x=summary.index, y=summary["q75"], mode="lines", line=dict(width=0), showlegend=False, hoverinfo="skip"))
-    fig.add_trace(
-        go.Scatter(
-            x=summary.index,
-            y=summary["q25"],
-            mode="lines",
-            fill="tonexty",
-            fillcolor="rgba(70,130,180,0.3)",
-            line=dict(width=0),
-            name="IQR (25–75%)",
-            hovertemplate="Q25: %{y:.2f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=summary.index,
-            y=summary["median"],
-            mode="lines",
-            name="Median",
-            line=dict(width=3, color="black"),
-            hovertemplate="Median: %{y:.2f}<br>Δmin: %{x}<extra></extra>",
-        )
-    )
-    fig.add_vline(x=0, line_dash="dash", line_color="red", annotation_text="Event", annotation_position="top")
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        xaxis_title="Minutes from event",
-        yaxis_title=ylabel,
-        legend=dict(orientation="h"),
-        margin=dict(l=100, r=100, t=100, b=100),
-    )
-    fig.update_xaxes(rangeslider_visible=True)
-    return fig
+    return shared_event_study_figure(summary, title, ylabel)
 
 
 def correlation_heatmap(df, cols):
-    corr = df[cols].corr(numeric_only=True)
-    fig = go.Figure(
-        data=go.Heatmap(
-            z=corr.values,
-            x=corr.columns,
-            y=corr.index,
-            hovertemplate="%{y} vs %{x}: %{z:.3f}<extra></extra>",
-        )
-    )
-    fig.update_layout(
-        title="Correlation Heatmap",
-        template="plotly_white",
-        height=650,
-        margin=dict(l=100, r=100, t=100, b=100),
-    )
-    return fig
+    return shared_correlation_heatmap(df, cols)
 
 
 def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
-    plot_df = df[[c for c in [x_col, y_col, color_col] if c and c in df.columns]].dropna().copy()
-    fig = go.Figure()
-    if plot_df.empty:
-        return fig
-
-    marker_kwargs = dict(size=6, opacity=0.55)
-    if color_col and color_col in plot_df.columns:
-        marker_kwargs["color"] = plot_df[color_col]
-        marker_kwargs["colorscale"] = "Viridis"
-        marker_kwargs["showscale"] = True
-        marker_kwargs["colorbar"] = {"title": color_col}
-
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df[x_col],
-            y=plot_df[y_col],
-            mode="markers",
-            marker=marker_kwargs,
-            name="Observations",
-            text=plot_df.index.astype(str) if isinstance(plot_df.index, pd.DatetimeIndex) else None,
-            hovertemplate=f"{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<extra></extra>",
-        )
-    )
-
-    if len(plot_df) >= 2:
-        x = plot_df[x_col].astype(float).to_numpy()
-        y = plot_df[y_col].astype(float).to_numpy()
-        if np.isfinite(x).all() and np.isfinite(y).all() and np.std(x) > 0:
-            slope, intercept = np.polyfit(x, y, 1)
-            xs = np.linspace(x.min(), x.max(), 100)
-            fig.add_trace(
-                go.Scatter(
-                    x=xs,
-                    y=slope * xs + intercept,
-                    mode="lines",
-                    name=f"Trend (slope={slope:.3f})",
-                )
-            )
-
-    fig.update_layout(
-        title=title or f"{y_col} vs {x_col}",
-        template="plotly_white",
-        xaxis_title=x_col,
-        yaxis_title=y_col,
-        legend=dict(orientation="h"),
-        margin=dict(l=100, r=100, t=100, b=100),
-    )
-    return fig
+    return shared_scatter_with_trend(df, x_col, y_col, color_col=color_col, title=title)
 
 
 # --------------------------------------------------
@@ -667,6 +450,15 @@ all_events = detect_all_transitions(master_df)
 events_table = build_events_table(master_df)
 if event_metrics_df is None or event_metrics_df.empty:
     event_metrics_df = compute_event_metrics_table(master_df)
+
+full_all_events = all_events
+full_master_df = master_df
+full_hourly_df = hourly_df
+full_daily_df = daily_df
+full_monthly_df = monthly_df
+full_weekday_df = weekday_df
+full_events_table = events_table
+full_event_metrics_df = event_metrics_df
 
 
 # --------------------------------------------------
@@ -688,12 +480,76 @@ page = st.sidebar.radio(
     ],
 )
 
+full_start = full_master_df.index.min().normalize()
+full_end = full_master_df.index.max().normalize()
+
+with st.sidebar.expander("Time Window", expanded=True):
+    window_mode = st.selectbox(
+        "Range",
+        ["Full record", "Last 30 days", "Last 60 days", "Custom"],
+        index=0,
+    )
+
+    if window_mode == "Last 30 days":
+        default_start = max(full_start, full_end - pd.Timedelta(days=29))
+        default_end = full_end
+    elif window_mode == "Last 60 days":
+        default_start = max(full_start, full_end - pd.Timedelta(days=59))
+        default_end = full_end
+    else:
+        default_start = full_start
+        default_end = full_end
+
+    selected_range = st.date_input(
+        "Dates",
+        value=(default_start.date(), default_end.date()),
+        min_value=full_start.date(),
+        max_value=full_end.date(),
+    )
+
+    if isinstance(selected_range, (tuple, list)) and len(selected_range) == 2:
+        start_date, end_date = selected_range
+    else:
+        start_date = selected_range
+        end_date = selected_range
+
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    start_ts = pd.Timestamp(start_date)
+    end_ts = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(minutes=1)
+
+master_df = filter_time_indexed_df(full_master_df, start_ts, end_ts)
+hourly_df = filter_time_indexed_df(full_hourly_df, start_ts, end_ts)
+daily_df = filter_time_indexed_df(full_daily_df, start_ts, end_ts)
+monthly_df, weekday_df = build_period_summaries(daily_df) if daily_df is not None else (full_monthly_df, full_weekday_df)
+events_table = full_events_table[
+    (full_events_table["timestamp"] >= start_ts) & (full_events_table["timestamp"] <= end_ts)
+].reset_index(drop=True)
+all_events = {
+    name: [ts for ts in times if start_ts <= ts <= end_ts]
+    for name, times in full_all_events.items()
+}
+event_metrics_df = compute_event_metrics_table(master_df) if master_df is not None else full_event_metrics_df
+
+if master_df is None or master_df.empty:
+    st.error("The selected time window returned no rows. Adjust the sidebar date range.")
+    st.stop()
+
 with st.sidebar.expander("Data status", expanded=False):
     st.write(f"1-min: {'✅' if master_df is not None else '❌'}")
     st.write(f"1-hour: {'✅' if hourly_df is not None else '❌'}")
     st.write(f"Daily: {'✅' if daily_df is not None else '❌'}")
     st.write(f"Monthly: {'✅' if monthly_df is not None else '❌'}")
     st.write(f"Weekday: {'✅' if weekday_df is not None else '❌'}")
+    st.caption(f"Filtered window: {start_ts.date()} to {end_ts.date()}")
+
+with st.sidebar.expander("Quick stats", expanded=False):
+    st.write(f"Minute rows: {len(master_df):,}")
+    st.write(f"NH3 coverage: {coverage_value(master_df, NH3, len(master_df))}")
+    st.write(f"H2S coverage: {coverage_value(master_df, H2S, len(master_df))}")
+    if daily_df is not None and not daily_df.empty:
+        st.write(f"Daily rows: {len(daily_df):,}")
 
 
 # --------------------------------------------------
@@ -702,11 +558,15 @@ with st.sidebar.expander("Data status", expanded=False):
 if page == "Overview":
     st.title("Wastewater Odor Analytics Dashboard")
     st.caption("Integrated view of odor, operations, transitions, load, and summary diagnostics.")
+    st.info(
+        f"Viewing {start_ts.date()} through {end_ts.date()} "
+        f"({len(master_df):,} minute rows, {len(events_table):,} detected transitions in range)."
+    )
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Rows (1-min)", f"{len(master_df):,}")
-    c2.metric("NH3 mean", f"{master_df[NH3].mean():.2f}" if has_data(master_df, NH3) else "NA")
-    c3.metric("H2S mean/max logic", f"{master_df[H2S].mean():.2f}" if has_data(master_df, H2S) else "NA")
+    c2.metric("NH3 mean", metric_value(master_df, NH3))
+    c3.metric("H2S mean/max logic", metric_value(master_df, H2S))
     c4.metric("Date range", f"{master_df.index.min().date()} → {master_df.index.max().date()}")
 
     c1, c2, c3, c4 = st.columns(4)
@@ -714,6 +574,12 @@ if page == "Overview":
     c2.metric("Ferric OFF events", len(all_events.get("Ferric_OFF", [])))
     c3.metric("HCl ON events", len(all_events.get("HCl_ON", [])))
     c4.metric("HCl OFF events", len(all_events.get("HCl_OFF", [])))
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("NH3 coverage", coverage_value(master_df, NH3, len(master_df)))
+    c2.metric("H2S coverage", coverage_value(master_df, H2S, len(master_df)))
+    c3.metric("Avg total GPM", metric_value(master_df, "total_gpm"))
+    c4.metric("Avg lbs/min", metric_value(master_df, "lbs_per_min"))
 
     top_cols = available_columns(master_df, [NH3, H2S, TEMP_NH3, TEMP_H2S, "total_gpm", "lbs_per_min"])
     if top_cols:
@@ -749,6 +615,7 @@ if page == "Overview":
 # --------------------------------------------------
 elif page == "Full Timeline":
     st.title("Full Timeline")
+    st.caption(f"Interactive timeline for the filtered window: {start_ts.date()} to {end_ts.date()}.")
 
     resolution = st.radio("Resolution", ["1-minute", "1-hour", "Daily"], horizontal=True)
     if resolution == "1-minute":
@@ -809,6 +676,7 @@ elif page == "Event Windows":
     if len(event_times) == 0:
         st.warning("No events found for this selection.")
     else:
+        st.metric("Available events", len(event_times))
         event_time = st.selectbox("Event timestamp", list(event_times), format_func=lambda x: x.strftime("%Y-%m-%d %H:%M"))
         window_df = master_df.loc[event_time - WINDOW_48H : event_time + WINDOW_48H].copy()
         window_df["minutes_from_event"] = (window_df.index - event_time).total_seconds() / 60
@@ -863,6 +731,15 @@ elif page == "Event Study":
         st.subheader("Summary table")
         st.dataframe(summary, use_container_width=True, height=250)
 
+        if not event_metrics_df.empty:
+            st.subheader("Matching effect metrics")
+            matching = event_metrics_df[
+                (event_metrics_df["chemical"] == chem) &
+                (event_metrics_df["event_type"] == event_type) &
+                (event_metrics_df["signal"] == signal_label)
+            ]
+            st.dataframe(matching, use_container_width=True, height=120)
+
 
 # --------------------------------------------------
 # TRANSITION COMPARISON
@@ -892,25 +769,21 @@ elif page == "Transition Comparison":
     if len(ordered) == 0:
         st.warning("No transition windows available.")
     else:
-        fig = make_subplots(
-            rows=2,
-            cols=2,
-            subplot_titles=list(ordered.keys()),
-            specs=[[{"secondary_y": True}, {"secondary_y": True}], [{"secondary_y": True}, {"secondary_y": True}]],
-        )
-        positions = [(1, 1), (1, 2), (2, 1), (2, 2)]
-        for (event_name, center), (r, c) in zip(ordered.items(), positions):
+        event_windows = {}
+        for event_name, center in ordered.items():
             w = master_df.loc[center - WINDOW_48H : center + WINDOW_48H].copy()
-            if w.empty or y1 not in w.columns or y2 not in w.columns:
-                continue
-            w["minutes"] = (w.index - center).total_seconds() / 60
-            fig.add_trace(go.Scatter(x=w["minutes"], y=w[y1], mode="lines", name=y1_label, showlegend=(r == 1 and c == 1)), row=r, col=c, secondary_y=False)
-            fig.add_trace(go.Scatter(x=w["minutes"], y=w[y2], mode="lines", line=dict(dash="dot"), name=y2_label, showlegend=(r == 1 and c == 1)), row=r, col=c, secondary_y=True)
-            fig.add_vline(x=0, line_dash="dash", line_color="black", row=r, col=c)
-            fig.update_yaxes(title_text=y1_label, row=r, col=c, secondary_y=False)
-            fig.update_yaxes(title_text=y2_label, row=r, col=c, secondary_y=True)
-        fig.update_layout(title=f"{choice} Across Operational Transitions", template="plotly_white", hovermode="x unified", height=800, legend=dict(orientation="h"))
-        fig.update_xaxes(title_text="Minutes from Event")
+            if not w.empty:
+                w["minutes"] = (w.index - center).total_seconds() / 60
+            event_windows[event_name] = w
+        fig = shared_multi_panel_figure(
+            master_df,
+            event_windows,
+            y1,
+            y2,
+            y1_label,
+            y2_label,
+            f"{choice} Across Operational Transitions",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         st.subheader("Response metrics")
@@ -927,6 +800,7 @@ elif page == "Transition Comparison":
 # --------------------------------------------------
 elif page == "Aggregates & Coverage":
     st.title("Aggregates & Coverage")
+    st.caption("Aggregate views are recalculated from the currently filtered daily window.")
 
     tabs = st.tabs(["Daily", "Monthly", "Weekday", "Coverage"])
 
@@ -1014,6 +888,7 @@ elif page == "Anomalies":
 
     z = add_zscore(master_df, target_col, window=window)
     anomalies = detect_anomalies(master_df, target_col, threshold=threshold, window=window)
+    st.metric("Anomalies found", f"{len(anomalies):,}")
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=master_df.index, y=master_df[target_col], mode="lines", name=target_col))
@@ -1068,7 +943,14 @@ elif page == "Data Explorer":
                     display_df = display_df.sort_values(sort_col, ascending=False)
                 except Exception:
                     pass
-            st.dataframe(display_df[show_cols].head(max_rows), use_container_width=True, height=500)
+            preview_df = display_df[show_cols].head(max_rows)
+            st.download_button(
+                "Download selection as CSV",
+                preview_df.to_csv().encode("utf-8"),
+                file_name=f"{dataset_name}_{start_ts.date()}_{end_ts.date()}.csv",
+                mime="text/csv",
+            )
+            st.dataframe(preview_df, use_container_width=True, height=500)
 
             if len(numeric_candidates) >= 1:
                 st.subheader("Quick distribution")

@@ -1,14 +1,15 @@
 import numpy as np
 import pandas as pd
-
-# --------------------------------------------------
-# CONSTANTS
-# --------------------------------------------------
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-
-BASELINE_WINDOW = (-48 * 60, -12 * 60)
-POST_WINDOW = (12 * 60, 96 * 60)
+from scripts.constants import (
+    BASELINE_WINDOW,
+    EVENT_COLUMNS as DEFAULT_EVENT_COLUMNS,
+    FLOW_COLS,
+    H2S,
+    NH3,
+    POST_WINDOW,
+    PRETREND_TOL as DEFAULT_PRETREND_TOL,
+    PRETREND_WINDOW as DEFAULT_PRETREND_WINDOW,
+)
 
 
 # --------------------------------------------------
@@ -32,7 +33,8 @@ def detect_transitions(df, column):
     if column not in df.columns:
         return pd.Index([]), pd.Index([])
 
-    diff = df[column].diff()
+    series = df[column].fillna(0).astype(int)
+    diff = series.diff()
 
     on_events = df.index[diff == 1]
     off_events = df.index[diff == -1]
@@ -40,19 +42,73 @@ def detect_transitions(df, column):
     return on_events, off_events
 
 
-def detect_all_transitions(df, event_columns):
+def detect_all_transitions(df, event_columns=None):
     events = {}
+
+    if event_columns is None:
+        event_columns = DEFAULT_EVENT_COLUMNS
 
     for name, col in event_columns.items():
         if col not in df.columns:
             continue
 
-        diff = df[col].diff()
-
-        events[f"{name}_ON"] = list(df.index[diff == 1])
-        events[f"{name}_OFF"] = list(df.index[diff == -1])
+        on_events, off_events = detect_transitions(df, col)
+        events[f"{name}_ON"] = list(on_events)
+        events[f"{name}_OFF"] = list(off_events)
 
     return events
+
+
+# --------------------------------------------------
+# EVENT WINDOW HELPERS
+# --------------------------------------------------
+def extract_relative_series(df, event_time, column):
+    if column not in df.columns:
+        return None
+
+    series = df[column].dropna().copy()
+    if series.empty:
+        return None
+
+    rel_time = (series.index - event_time).total_seconds() / 60
+    series.index = rel_time.astype(int)
+    return series
+
+
+def extract_event_window(df, event_time, column, window_minutes):
+    if column not in df.columns:
+        return None
+
+    start = event_time - pd.Timedelta(minutes=window_minutes)
+    end = event_time + pd.Timedelta(minutes=window_minutes)
+    subset = df.loc[start:end, column].copy()
+
+    if subset.empty:
+        return None
+
+    aligned_index = ((subset.index - event_time).total_seconds() / 60).astype(int)
+    subset.index = aligned_index
+    return subset
+
+
+def summarize_event(aligned_df):
+    return pd.DataFrame(
+        {
+            "median": aligned_df.median(axis=1),
+            "q25": aligned_df.quantile(0.25, axis=1),
+            "q75": aligned_df.quantile(0.75, axis=1),
+        }
+    )
+
+
+def check_pretrend(summary, window=DEFAULT_PRETREND_WINDOW, tolerance=DEFAULT_PRETREND_TOL):
+    pre = summary.loc[window[0] : window[1], "median"]
+
+    if pre.empty:
+        return True
+
+    variation = pre.max() - pre.min()
+    return variation <= tolerance
 
 
 # --------------------------------------------------
@@ -68,13 +124,19 @@ def window_slice(series, window):
     ]
 
 
-def compute_single_event_metrics(baseline, post):
+def compute_single_event_metrics(
+    baseline,
+    post,
+    *,
+    post_label="post",
+    time_to_min_label="time_to_min",
+    persistence_label="persistence",
+):
     if baseline.empty or post.empty:
         return None
 
     baseline_val = baseline.median()
     post_val = post.median()
-
     delta = post_val - baseline_val
 
     if pd.isna(baseline_val) or baseline_val == 0:
@@ -82,30 +144,29 @@ def compute_single_event_metrics(baseline, post):
     else:
         pct_change = (delta / baseline_val) * 100
 
-    # Time to minimum (useful for suppression effects)
-    time_to_min = np.nan if post.empty else post.idxmin()
-
-    # Persistence below baseline
     below = post[post < baseline_val]
-    persistence = (
-        0 if below.empty else below.index.max() - below.index.min()
-    )
-
-    # Variability (robust spread)
+    persistence = 0 if below.empty else below.index.max() - below.index.min()
+    time_to_min = np.nan if post.empty else post.idxmin()
     iqr_post = post.quantile(0.75) - post.quantile(0.25)
 
     return {
         "baseline": baseline_val,
-        "post": post_val,
+        post_label: post_val,
         "delta": delta,
         "percent_change": pct_change,
-        "time_to_min": time_to_min,
-        "persistence": persistence,
+        time_to_min_label: time_to_min,
+        persistence_label: persistence,
         "post_iqr": iqr_post,
     }
 
 
-def aggregate_event_metrics(metrics_list):
+def aggregate_event_metrics(
+    metrics_list,
+    *,
+    post_label="post",
+    time_to_min_label="time_to_min",
+    persistence_label="persistence",
+):
     if not metrics_list:
         return {}
 
@@ -113,48 +174,66 @@ def aggregate_event_metrics(metrics_list):
 
     return {
         "baseline": df["baseline"].median(),
-        "post": df["post"].median(),
+        post_label: df[post_label].median(),
         "delta": df["delta"].median(),
         "percent_change": df["percent_change"].median(),
-        "time_to_min": df["time_to_min"].median(),
-        "persistence": df["persistence"].median(),
+        time_to_min_label: df[time_to_min_label].median(),
+        persistence_label: df[persistence_label].median(),
         "post_iqr": df["post_iqr"].median(),
         "n_events": len(df),
     }
 
 
-def compute_event_metrics(df, event_col, signal_col):
+def compute_event_metrics(
+    df,
+    event_col,
+    signal_col,
+    *,
+    baseline_window=BASELINE_WINDOW,
+    post_window=POST_WINDOW,
+    post_label="post",
+    time_to_min_label="time_to_min",
+    persistence_label="persistence",
+):
     if event_col not in df.columns or signal_col not in df.columns:
         return pd.DataFrame()
 
     on_events, off_events = detect_transitions(df, event_col)
+    series = _safe_series(df, signal_col)
+
+    if series.empty:
+        return pd.DataFrame()
 
     results = []
 
     for event_type, events in {"ON": on_events, "OFF": off_events}.items():
         event_metrics = []
 
-        for t in events:
-            s = _safe_series(df, signal_col)
-            if s.empty:
-                continue
+        for event_time in events:
+            aligned = series.copy()
+            rel_time = (aligned.index - event_time).total_seconds() / 60
+            aligned.index = rel_time.astype(int)
 
-            # Align time relative to event
-            rel_time = (s.index - t).total_seconds() / 60
-            s_aligned = s.copy()
-            s_aligned.index = rel_time.astype(int)
+            baseline = window_slice(aligned, baseline_window)
+            post = window_slice(aligned, post_window)
 
-            baseline = window_slice(s_aligned, BASELINE_WINDOW)
-            post = window_slice(s_aligned, POST_WINDOW)
-
-            metrics = compute_single_event_metrics(baseline, post)
-            if metrics is None:
-                continue
-
-            event_metrics.append(metrics)
+            metrics = compute_single_event_metrics(
+                baseline,
+                post,
+                post_label=post_label,
+                time_to_min_label=time_to_min_label,
+                persistence_label=persistence_label,
+            )
+            if metrics is not None:
+                event_metrics.append(metrics)
 
         if event_metrics:
-            agg = aggregate_event_metrics(event_metrics)
+            agg = aggregate_event_metrics(
+                event_metrics,
+                post_label=post_label,
+                time_to_min_label=time_to_min_label,
+                persistence_label=persistence_label,
+            )
             agg["event_type"] = event_type
             results.append(agg)
 
@@ -170,24 +249,16 @@ def add_operational_features(df):
 
     df = df.copy()
 
-    # Ensure total flow exists
-    flow_cols = [
-        "west_sludge_out_gpm",
-        "east_sludge_out_gpm",
-        "digesters_sludge_out_flow",
-    ]
-
-    for col in flow_cols:
+    for col in FLOW_COLS:
         if col not in df.columns:
             df[col] = 0.0
+        df[col] = pd.to_numeric(df[col], errors="coerce").ffill().fillna(0.0)
 
-    df["total_gpm"] = df[flow_cols].sum(axis=1)
+    df["total_gpm"] = df[FLOW_COLS].sum(axis=1)
 
-    # Mass transfer approximation
     k = 8.34 * 1.38 * 0.66
     df["lbs_per_min"] = df["total_gpm"] * k
 
-    # Normalize gas by load
     eps = 1e-9
 
     if NH3 in df.columns:
@@ -205,21 +276,19 @@ def add_operational_features(df):
 def add_zscore(df, col, window=1440):
     _validate_column(df, col)
 
-    rolling_mean = df[col].rolling(window, min_periods=window // 10).mean()
-    rolling_std = df[col].rolling(window, min_periods=window // 10).std()
+    min_periods = max(10, window // 10)
+    rolling_mean = df[col].rolling(window, min_periods=min_periods).mean()
+    rolling_std = df[col].rolling(window, min_periods=min_periods).std()
 
-    z = (df[col] - rolling_mean) / rolling_std.replace(0, np.nan)
-
-    return z
+    return (df[col] - rolling_mean) / rolling_std.replace(0, np.nan)
 
 
-def detect_anomalies(df, col, threshold=3):
+def detect_anomalies(df, col, threshold=3, window=1440):
     if col not in df.columns:
         return pd.DataFrame()
 
-    z = add_zscore(df, col)
+    z = add_zscore(df, col, window=window)
+    anomalies = df[z.abs() >= threshold].copy()
+    anomalies["z_score"] = z.loc[anomalies.index]
 
-    anomalies = df[z > threshold].copy()
-    anomalies["z_score"] = z[z > threshold]
-
-    return anomalies
+    return anomalies.sort_values("z_score", key=np.abs, ascending=False)

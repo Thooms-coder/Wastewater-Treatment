@@ -15,10 +15,19 @@ Author: Mutsa Mungoshi
 
 from pathlib import Path
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
+from scripts.analytics import detect_transitions
+from scripts.constants import (
+    EVENT_COLUMNS,
+    FLOW,
+    H2S,
+    NH3,
+    TEMP_H2S,
+    TEMP_NH3,
+    WINDOW_48H as WINDOW,
+)
 from scripts.paths import PROCESSED_DATA_DIR
+from scripts.plotting import multi_panel_figure
 
 
 # ---------------------------------------------------------------------
@@ -32,23 +41,6 @@ MASTER_PATH = PROCESSED_DATA_DIR / "master_1min.parquet"
 
 
 # ---------------------------------------------------------------------
-# Columns
-# ---------------------------------------------------------------------
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-TEMP_NH3 = "nh3_temperature_°f"
-TEMP_H2S = "h2s_temperature_°f"
-FLOW = "east_sludge_out_gpm_combined"
-
-EVENT_COLUMNS = {
-    "Ferric": "ferric_available",
-    "HCl": "hcl_available",
-}
-
-WINDOW = pd.Timedelta(hours=48)
-
-
-# ---------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------
 def safe_column(df, col):
@@ -59,14 +51,7 @@ def detect_first_transitions(df):
     events = {}
 
     for chem_name, col in EVENT_COLUMNS.items():
-
-        if col not in df.columns:
-            continue
-
-        diff = df[col].diff()
-
-        off_times = df.index[diff == -1]
-        on_times = df.index[diff == 1]
+        on_times, off_times = detect_transitions(df, col)
 
         if not off_times.empty:
             events[f"{chem_name} OFF"] = off_times[0]
@@ -90,87 +75,12 @@ def extract_window(df, center):
     return w
 
 
-# ---------------------------------------------------------------------
-# 🔥 Plotly Multi-Panel
-# ---------------------------------------------------------------------
-def multi_panel(df, events, y1, y2,
-                y1_label, y2_label,
-                title, fname):
-
+def multi_panel(df, events, y1, y2, y1_label, y2_label, title, fname):
     if not safe_column(df, y1) or not safe_column(df, y2):
         return
 
-    fig = make_subplots(
-        rows=2,
-        cols=2,
-        subplot_titles=list(events.keys()),
-        specs=[[{"secondary_y": True}, {"secondary_y": True}],
-               [{"secondary_y": True}, {"secondary_y": True}]]
-    )
-
-    positions = [(1,1), (1,2), (2,1), (2,2)]
-
-    for (event_name, t), (r, c) in zip(events.items(), positions):
-
-        w = extract_window(df, t)
-
-        if w.empty:
-            continue
-
-        # Primary signal
-        fig.add_trace(
-            go.Scatter(
-                x=w["minutes"],
-                y=w[y1],
-                mode="lines",
-                name=y1_label,
-                line=dict(width=2),
-                showlegend=(r == 1 and c == 1),
-                hovertemplate=f"{y1_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
-            ),
-            row=r, col=c,
-            secondary_y=False
-        )
-
-        # Secondary signal
-        fig.add_trace(
-            go.Scatter(
-                x=w["minutes"],
-                y=w[y2],
-                mode="lines",
-                name=y2_label,
-                line=dict(dash="dot"),
-                showlegend=(r == 1 and c == 1),
-                hovertemplate=f"{y2_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
-            ),
-            row=r, col=c,
-            secondary_y=True
-        )
-
-        # Event marker
-        fig.add_vline(
-            x=0,
-            line_dash="dash",
-            line_color="black",
-            row=r,
-            col=c
-        )
-
-        # Axis labels
-        fig.update_yaxes(title_text=y1_label, row=r, col=c, secondary_y=False)
-        fig.update_yaxes(title_text=y2_label, row=r, col=c, secondary_y=True)
-
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        height=800,
-        legend=dict(orientation="h"),
-    )
-
-    fig.update_xaxes(title_text="Minutes from Event")
-    fig.update_xaxes(rangeslider_visible=True)
-    
+    event_windows = {event_name: extract_window(df, t) for event_name, t in events.items()}
+    fig = multi_panel_figure(df, event_windows, y1, y2, y1_label, y2_label, title)
     fig.write_html(FIG_DIR / fname)
 
 

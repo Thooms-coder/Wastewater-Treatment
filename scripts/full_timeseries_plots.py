@@ -16,10 +16,21 @@ Author: Mutsa Mungoshi
 """
 
 from pathlib import Path
-import pandas as pd
-import plotly.graph_objects as go
 
+from scripts.analytics import add_operational_features, detect_all_transitions
+from scripts.constants import (
+    DIGESTER_GPM,
+    EAST_GPM,
+    EVENT_COLUMNS,
+    H2S,
+    NH3,
+    PLANT_EVENTS,
+    TEMP_H2S,
+    TEMP_NH3,
+    WEST_GPM,
+)
 from scripts.paths import PROCESSED_DATA_DIR
+from scripts.plotting import dual_axis_figure
 
 
 # ---------------------------------------------------------------------
@@ -32,98 +43,8 @@ FIG_DIR.mkdir(parents=True, exist_ok=True)
 MASTER_PATH = PROCESSED_DATA_DIR / "master_1min.parquet"
 
 
-# ---------------------------------------------------------------------
-# Columns
-# ---------------------------------------------------------------------
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-TEMP_NH3 = "nh3_temperature_°f"
-TEMP_H2S = "h2s_temperature_°f"
-
-WEST_GPM = "west_sludge_out_gpm"
-EAST_GPM = "east_sludge_out_gpm"
-DIGESTER_GPM = "digesters_sludge_out_flow"
-
-EVENT_COLUMNS = {
-    "Ferric": "ferric_available",
-    "HCl": "hcl_available",
-}
-
-
-# ---------------------------------------------------------------------
-# Operational plant events (not ON/OFF transitions)
-# ---------------------------------------------------------------------
-PLANT_EVENTS = {
-    "Ferric Reduced": pd.Timestamp("2026-01-07"),
-}
-
-
-# ---------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------
 def safe_column(df, col):
     return col in df.columns and df[col].notna().any()
-
-
-def detect_all_transitions(df):
-    events = {}
-
-    for chem_name, col in EVENT_COLUMNS.items():
-        if col not in df.columns:
-            continue
-
-        diff = df[col].diff()
-
-        on_times = df.index[diff == 1]
-        off_times = df.index[diff == -1]
-
-        events[f"{chem_name}_ON"] = list(on_times)
-        events[f"{chem_name}_OFF"] = list(off_times)
-
-    return events
-
-
-def add_event_lines_plotly(fig, events, yref="paper"):
-    # Chemical ON/OFF transitions
-    for name, times in events.items():
-        for t in times:
-            fig.add_vline(
-                x=t,
-                line_dash="dash",
-                line_width=1,
-                opacity=0.35,
-            )
-            fig.add_annotation(
-                x=t,
-                y=1,
-                yref=yref,
-                text=name,
-                textangle=-90,
-                showarrow=False,
-                xanchor="left",
-                yanchor="top",
-                font=dict(size=8),
-            )
-
-    # Operational plant events
-    for name, t in PLANT_EVENTS.items():
-        fig.add_vline(
-            x=t,
-            line_dash="dot",
-            line_color="purple",
-            line_width=1.5,
-        )
-        fig.add_annotation(
-            x=t,
-            y=1,
-            yref=yref,
-            text=name,
-            textangle=-90,
-            showarrow=False,
-            xanchor="left",
-            yanchor="top",
-            font=dict(size=9, color="purple"),
-        )
 
 
 def simple_dual_axis_plot(
@@ -141,54 +62,17 @@ def simple_dual_axis_plot(
 
     plot_df = df[[y1_col, y2_col]].dropna(how="all").copy()
 
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df.index,
-            y=plot_df[y1_col],
-            mode="lines",
-            name=y1_label,
-            line=dict(width=2),
-            yaxis="y",
-            hovertemplate=(
-                "Time: %{x}<br>"
-                f"{y1_label}: " + "%{y:.2f}<extra></extra>"
-            ),
-        )
+    fig = dual_axis_figure(
+        plot_df,
+        y1_col,
+        y2_col,
+        y1_label,
+        y2_label,
+        title,
+        add_events=events,
+        plant_events=PLANT_EVENTS,
+        margin=dict(l=40, r=40, t=60, b=40),
     )
-
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df.index,
-            y=plot_df[y2_col],
-            mode="lines",
-            name=y2_label,
-            line=dict(width=1.6, dash="dot"),
-            yaxis="y2",
-            hovertemplate=(
-                "Time: %{x}<br>"
-                f"{y2_label}: " + "%{y:.2f}<extra></extra>"
-            ),
-        )
-    )
-
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        xaxis=dict(title="Date / Time"),
-        yaxis=dict(title=y1_label),
-        yaxis2=dict(
-            title=y2_label,
-            overlaying="y",
-            side="right",
-        ),
-        legend=dict(orientation="h"),
-    )
-
-    add_event_lines_plotly(fig, events)
-    fig.update_xaxes(rangeslider_visible=True)
     fig.write_html(FIG_DIR / fname)
 
 
@@ -208,54 +92,20 @@ def dual_axis_hourly_bar_plot(
     plot_df = df[[signal_col]].dropna().copy()
     hourly_plot = hourly_lbs.dropna().copy()
 
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df.index,
-            y=plot_df[signal_col],
-            mode="lines",
-            name=signal_label,
-            line=dict(width=2),
-            yaxis="y",
-            hovertemplate=(
-                "Time: %{x}<br>"
-                f"{signal_label}: " + "%{y:.2f}<extra></extra>"
-            ),
-        )
+    merged = plot_df.join(hourly_plot.rename(lbs_label), how="outer")
+    fig = dual_axis_figure(
+        merged,
+        signal_col,
+        lbs_label,
+        signal_label,
+        lbs_label,
+        title,
+        add_events=events,
+        plant_events=PLANT_EVENTS,
+        bar_second=True,
+        margin=dict(l=40, r=40, t=60, b=40),
+        secondary_tickformat="~s",
     )
-
-    fig.add_trace(
-        go.Bar(
-            x=hourly_plot.index,
-            y=hourly_plot.values,
-            name=lbs_label,
-            yaxis="y2",
-            hovertemplate=(
-                "Hour ending: %{x}<br>"
-                f"{lbs_label}: " + "%{y:,.0f}<extra></extra>"
-            ),
-        )
-    )
-
-    fig.update_layout(
-        title=title,
-        template="plotly_white",
-        hovermode="x unified",
-        barmode="overlay",
-        xaxis=dict(title="Date / Time"),
-        yaxis=dict(title=signal_label),
-        yaxis2=dict(
-            title=lbs_label,
-            overlaying="y",
-            side="right",
-            tickformat="~s",
-        ),
-        legend=dict(orientation="h"),
-    )
-
-    add_event_lines_plotly(fig, events)
-    fig.update_xaxes(rangeslider_visible=True)
     fig.write_html(FIG_DIR / fname)
 
 
@@ -271,27 +121,8 @@ def run_full_timeseries_plots():
     if not isinstance(df.index, pd.DatetimeIndex):
         raise TypeError("Master dataset index must be a DatetimeIndex.")
 
-    events = detect_all_transitions(df)
-
-    # -------------------------------------------------
-    # Unified Sludge Flow Logic
-    # -------------------------------------------------
-    for col in [WEST_GPM, EAST_GPM, DIGESTER_GPM]:
-        if col in df.columns:
-            df[col] = df[col].ffill().fillna(0)
-        else:
-            df[col] = 0
-
-    df["total_gpm"] = (
-        df[WEST_GPM]
-        + df[EAST_GPM]
-        + df[DIGESTER_GPM]
-    )
-
-    # Excel constant
-    k = 8.34 * 1.38 * 0.66
-
-    df["lbs_per_min"] = df["total_gpm"] * k
+    events = detect_all_transitions(df, EVENT_COLUMNS)
+    df = add_operational_features(df)
 
     # Hour ending timestamps
     hourly_lbs = (

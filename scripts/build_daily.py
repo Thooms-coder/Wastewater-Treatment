@@ -1,20 +1,11 @@
 from pathlib import Path
 import pandas as pd
 
+from scripts.constants import EAST_GPM, FLOW, FLOW_COLS, H2S, NH3, WATER_COLS, WEST_GPM
 from scripts.paths import PROCESSED_DATA_DIR
 
 MASTER_PATH = PROCESSED_DATA_DIR / "master_1min.parquet"
 OUTPUT_PATH = PROCESSED_DATA_DIR / "master_daily.parquet"
-
-NH3 = "nh3_roll_mean_15min"
-H2S = "h2s_roll_max_15min"
-
-WATER_COLS = [
-    "east_sludge_out_gpm",
-    "west_sludge_out_gpm",
-    "digesters_sludge_out_flow",
-    "east_sludge_out_gpm_combined",
-]
 
 OPTIONAL_PROCESS_COLS = [
     "ferric_available",
@@ -103,7 +94,7 @@ def run_daily_aggregation():
         daily["h2s_coverage"] = daily["n_obs_h2s"] / 1440
 
     water_count_source = None
-    for col in ["east_sludge_out_gpm_combined", "east_sludge_out_gpm", "west_sludge_out_gpm"]:
+    for col in [FLOW, EAST_GPM, WEST_GPM]:
         if col in df.columns:
             water_count_source = col
             break
@@ -121,7 +112,7 @@ def run_daily_aggregation():
     if available_flow_cols:
         total_gpm = pd.Series(0.0, index=df.index)
 
-        for col in ["west_sludge_out_gpm", "east_sludge_out_gpm", "digesters_sludge_out_flow"]:
+        for col in FLOW_COLS:
             if col in df.columns:
                 total_gpm = total_gpm.add(df[col].fillna(0), fill_value=0)
 

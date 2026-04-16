@@ -17,8 +17,17 @@ Author: Mutsa Mungoshi
 """
 
 import pandas as pd
-import numpy as np
 
+from scripts.analytics import (
+    BASELINE_WINDOW,
+    POST_WINDOW,
+    aggregate_event_metrics,
+    compute_single_event_metrics,
+    detect_transitions,
+    extract_relative_series,
+    window_slice,
+)
+from scripts.constants import EVENT_COLUMNS, H2S, NH3
 from scripts.paths import PROCESSED_DATA_DIR
 
 
@@ -28,110 +37,9 @@ from scripts.paths import PROCESSED_DATA_DIR
 MASTER_FILE = PROCESSED_DATA_DIR / "master_1min.parquet"
 
 TARGETS = {
-    "NH3": "nh3_roll_mean_15min",
-    "H2S": "h2s_roll_max_15min",
+    "NH3": NH3,
+    "H2S": H2S,
 }
-
-EVENT_COLUMNS = {
-    "Ferric": "ferric_available",
-    "HCl": "hcl_available",
-}
-
-BASELINE_WINDOW = (-48 * 60, -12 * 60)
-POST_WINDOW     = ( 12 * 60,  96 * 60)
-
-
-# --------------------------------------------------
-# Helpers
-# --------------------------------------------------
-def detect_transitions(df, column):
-    diff = df[column].diff()
-    on_events  = df.index[diff == 1]
-    off_events = df.index[diff == -1]
-    return on_events, off_events
-
-
-def extract_relative_series(df, event_time, column):
-    if column not in df.columns:
-        return None
-
-    series = df[column].dropna()
-
-    if series.empty:
-        return None
-
-    rel_time = (series.index - event_time).total_seconds() / 60
-    series.index = rel_time.astype(int)
-
-    return series
-
-
-def window_slice(series, window):
-    if series is None:
-        return pd.Series(dtype=float)
-
-    return series.loc[
-        (series.index >= window[0]) &
-        (series.index <= window[1])
-    ]
-
-
-def compute_single_event_metrics(baseline, post):
-
-    baseline_val = baseline.median()
-    post_val     = post.median()
-
-    # --- Core effect ---
-    delta = post_val - baseline_val
-
-    pct_change = (
-        (delta / baseline_val * 100)
-        if baseline_val not in [0, np.nan] else np.nan
-    )
-
-    # --- Time to minimum (safe) ---
-    if post.empty:
-        time_to_min = np.nan
-    else:
-        time_to_min = post.idxmin()
-
-    # --- Persistence below baseline ---
-    below = post[post < baseline_val]
-
-    if below.empty:
-        persistence = 0
-    else:
-        persistence = below.index.max() - below.index.min()
-
-    # --- Variability (new, important) ---
-    iqr_post = post.quantile(0.75) - post.quantile(0.25)
-
-    return {
-        "baseline": baseline_val,
-        "post_median": post_val,
-        "delta": delta,
-        "percent_change": pct_change,
-        "time_to_min_min": time_to_min,
-        "persistence_min": persistence,
-        "post_iqr": iqr_post,
-    }
-
-
-def aggregate_event_metrics(event_metrics_list):
-
-    df = pd.DataFrame(event_metrics_list)
-
-    return {
-        "baseline": df["baseline"].median(),
-        "post_median": df["post_median"].median(),
-        "delta": df["delta"].median(),
-        "percent_change": df["percent_change"].median(),
-        "time_to_min_min": df["time_to_min_min"].median(),
-        "persistence_min": df["persistence_min"].median(),
-        "post_iqr": df["post_iqr"].median(),
-        "n_events": len(df),
-    }
-
 
 # --------------------------------------------------
 # Main workflow
@@ -179,14 +87,25 @@ def run_event_metrics():
                     if baseline.empty or post.empty:
                         continue
 
-                    metrics = compute_single_event_metrics(baseline, post)
+                    metrics = compute_single_event_metrics(
+                        baseline,
+                        post,
+                        post_label="post_median",
+                        time_to_min_label="time_to_min_min",
+                        persistence_label="persistence_min",
+                    )
                     event_metrics.append(metrics)
 
                 if not event_metrics:
                     print(f"[WARN] No valid events for {chem_name} {event_type} ({signal_name})")
                     continue
 
-                agg_metrics = aggregate_event_metrics(event_metrics)
+                agg_metrics = aggregate_event_metrics(
+                    event_metrics,
+                    post_label="post_median",
+                    time_to_min_label="time_to_min_min",
+                    persistence_label="persistence_min",
+                )
 
                 # --------------------------------------------------
                 # Domain sanity checks (important for your research)
