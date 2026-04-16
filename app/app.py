@@ -881,17 +881,22 @@ def executive_summary(master_df, events_table):
 
 
 def render_executive_cards(cards):
-    markup = "".join(
-        f"""
-        <div class="executive-card">
-            <div class="executive-card-label">{escape(card["label"])}</div>
-            <div class="executive-card-value">{escape(card["value"])}</div>
-            <div class="executive-card-note">{escape(card["note"])}</div>
-        </div>
-        """
-        for card in cards
-    )
-    st.markdown(f'<div class="executive-grid">{markup}</div>', unsafe_allow_html=True)
+    if not cards:
+        return
+
+    columns = st.columns(len(cards))
+    for column, card in zip(columns, cards):
+        with column:
+            st.markdown(
+                f"""
+                <div class="executive-card">
+                    <div class="executive-card-label">{escape(card["label"])}</div>
+                    <div class="executive-card-value">{escape(card["value"])}</div>
+                    <div class="executive-card-note">{escape(card["note"])}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_page_header(title, subtitle, kicker="Wastewater Treatment"):
