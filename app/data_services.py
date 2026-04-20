@@ -420,8 +420,13 @@ def event_study_figure(summary, title, ylabel):
     return shared_event_study_figure(summary, title, ylabel)
 
 
-def correlation_heatmap(df, cols):
-    return shared_correlation_heatmap(df, cols)
+def correlation_heatmap(df, cols, title="Correlation Heatmap"):
+    try:
+        return shared_correlation_heatmap(df, cols, title=title)
+    except TypeError as exc:
+        if "title" not in str(exc):
+            raise
+        return shared_correlation_heatmap(df, cols)
 
 
 def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
