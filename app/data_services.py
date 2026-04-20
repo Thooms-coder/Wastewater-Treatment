@@ -381,19 +381,35 @@ def dual_axis_figure(
     y1_scale_mode="auto",
     y2_scale_mode="auto",
 ):
-    return shared_dual_axis_figure(
-        df,
-        y1_col,
-        y2_col,
-        y1_label,
-        y2_label,
-        title,
+    kwargs = dict(
         add_events=add_events,
         plant_events=PLANT_EVENTS if add_events else None,
         bar_second=bar_second,
-        y1_scale_mode=y1_scale_mode,
-        y2_scale_mode=y2_scale_mode,
     )
+    try:
+        return shared_dual_axis_figure(
+            df,
+            y1_col,
+            y2_col,
+            y1_label,
+            y2_label,
+            title,
+            y1_scale_mode=y1_scale_mode,
+            y2_scale_mode=y2_scale_mode,
+            **kwargs,
+        )
+    except TypeError as exc:
+        if "y1_scale_mode" not in str(exc) and "y2_scale_mode" not in str(exc):
+            raise
+        return shared_dual_axis_figure(
+            df,
+            y1_col,
+            y2_col,
+            y1_label,
+            y2_label,
+            title,
+            **kwargs,
+        )
 
 
 def event_window_figure(window_df, y1, y2, y1_label, y2_label, title, bar=False):
