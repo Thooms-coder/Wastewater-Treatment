@@ -3,7 +3,19 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from scripts.constants import EVENT_COLUMNS, FLOW, H2S, NH3, RAW_H2S, RAW_NH3, TEMP_H2S, TEMP_NH3, WINDOW_48H
-from scripts.plotting import display_label, multi_panel_figure
+from scripts import plotting as plotting_module
+
+multi_panel_figure = plotting_module.multi_panel_figure
+
+
+def display_label(column_name):
+    helper = getattr(plotting_module, "display_label", None)
+    if helper is not None:
+        return helper(column_name)
+    if column_name is None:
+        return ""
+    text = str(column_name).replace("_", " ").strip()
+    return text.title() if text else str(column_name)
 
 from app.dashboard_ui import (
     build_chemistry_review_table,
