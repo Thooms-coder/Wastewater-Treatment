@@ -380,6 +380,8 @@ def dual_axis_figure(
     bar_second=False,
     y1_scale_mode="auto",
     y2_scale_mode="auto",
+    keep_full_x_span=False,
+    xaxis_range=None,
 ):
     kwargs = dict(
         add_events=add_events,
@@ -396,20 +398,65 @@ def dual_axis_figure(
             title,
             y1_scale_mode=y1_scale_mode,
             y2_scale_mode=y2_scale_mode,
+            keep_full_x_span=keep_full_x_span,
+            xaxis_range=xaxis_range,
             **kwargs,
         )
     except TypeError as exc:
-        if "y1_scale_mode" not in str(exc) and "y2_scale_mode" not in str(exc):
-            raise
-        return shared_dual_axis_figure(
-            df,
-            y1_col,
-            y2_col,
-            y1_label,
-            y2_label,
-            title,
-            **kwargs,
-        )
+        msg = str(exc)
+        if "y1_scale_mode" in msg or "y2_scale_mode" in msg:
+            try:
+                return shared_dual_axis_figure(
+                    df,
+                    y1_col,
+                    y2_col,
+                    y1_label,
+                    y2_label,
+                    title,
+                    keep_full_x_span=keep_full_x_span,
+                    xaxis_range=xaxis_range,
+                    **kwargs,
+                )
+            except TypeError as inner_exc:
+                inner_msg = str(inner_exc)
+                if "keep_full_x_span" not in inner_msg and "xaxis_range" not in inner_msg:
+                    raise
+                return shared_dual_axis_figure(
+                    df,
+                    y1_col,
+                    y2_col,
+                    y1_label,
+                    y2_label,
+                    title,
+                    **kwargs,
+                )
+        if "keep_full_x_span" in msg or "xaxis_range" in msg:
+            try:
+                return shared_dual_axis_figure(
+                    df,
+                    y1_col,
+                    y2_col,
+                    y1_label,
+                    y2_label,
+                    title,
+                    y1_scale_mode=y1_scale_mode,
+                    y2_scale_mode=y2_scale_mode,
+                    **kwargs,
+                )
+            except TypeError as inner_exc:
+                inner_msg = str(inner_exc)
+                if "y1_scale_mode" not in inner_msg and "y2_scale_mode" not in inner_msg:
+                    raise
+                return shared_dual_axis_figure(
+                    df,
+                    y1_col,
+                    y2_col,
+                    y1_label,
+                    y2_label,
+                    title,
+                    **kwargs,
+                )
+        raise
 
 
 def event_window_figure(window_df, y1, y2, y1_label, y2_label, title, bar=False):
