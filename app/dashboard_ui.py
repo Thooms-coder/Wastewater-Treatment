@@ -61,6 +61,18 @@ html, body, [class*="css"]  {
     padding-bottom: 2.25rem;
 }
 
+[data-testid="stHeader"] {
+    display: none !important;
+}
+
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+[data-testid="collapsedControl"] {
+    top: 0.65rem;
+}
+
 [data-testid="stSidebar"] {
     background:
         radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent 28%),
@@ -74,7 +86,26 @@ html, body, [class*="css"]  {
 }
 
 [data-testid="stSidebar"] .stCaption {
-    color: rgba(238, 246, 241, 0.78);
+    color: rgba(244, 250, 246, 0.9);
+}
+
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] li,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] span {
+    color: #f3faf6 !important;
+}
+
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] strong {
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] ul {
+    padding-left: 1rem;
+}
+
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] li {
+    margin-bottom: 0.28rem;
+    line-height: 1.45;
 }
 
 [data-testid="stSidebar"] [data-testid="stExpander"] {
@@ -85,24 +116,43 @@ html, body, [class*="css"]  {
 
 [data-testid="stSidebar"] [data-baseweb="tab-list"] {
     gap: 0.25rem;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    padding: 0.22rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 0.28rem;
+    margin: 0.2rem 0 0.5rem 0;
 }
 
-[data-testid="stSidebar"] [data-baseweb="tab"] {
-    border-radius: 10px;
-    padding: 0.34rem 0.55rem 0.38rem 0.55rem;
-    color: rgba(244, 250, 246, 0.9);
-    font-weight: 600;
+[data-testid="stSidebar"] [data-baseweb="tab"],
+[data-testid="stSidebar"] button[role="tab"] {
+    min-height: 2.2rem;
+    border-radius: 12px;
+    padding: 0.42rem 0.72rem 0.46rem 0.72rem;
+    color: #f3faf6 !important;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+    justify-content: center;
+    text-align: center;
 }
 
-[data-testid="stSidebar"] [data-baseweb="tab"][aria-selected="true"] {
+[data-testid="stSidebar"] [data-baseweb="tab"][aria-selected="true"],
+[data-testid="stSidebar"] button[role="tab"][aria-selected="true"] {
     background: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(235, 244, 239, 0.82) 100%);
-    color: #16352b;
+    color: #16352b !important;
     border: 1px solid rgba(255,255,255,0.26);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 8px 16px rgba(9, 22, 18, 0.12);
+}
+
+[data-testid="stSidebar"] [data-baseweb="tab"] p,
+[data-testid="stSidebar"] [data-baseweb="tab"] span,
+[data-testid="stSidebar"] [data-baseweb="tab"] div,
+[data-testid="stSidebar"] button[role="tab"] p,
+[data-testid="stSidebar"] button[role="tab"] span,
+[data-testid="stSidebar"] button[role="tab"] div {
+    color: inherit !important;
+    -webkit-text-fill-color: inherit !important;
+    font-weight: inherit !important;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div,
@@ -128,12 +178,20 @@ html, body, [class*="css"]  {
 }
 
 [data-testid="stSidebar"] [data-baseweb="tag"] {
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.18);
+    color: #f7fbf8 !important;
 }
 
 [data-testid="stSidebar"] input::placeholder {
     color: rgba(247, 251, 248, 0.84) !important;
     -webkit-text-fill-color: rgba(247, 251, 248, 0.84) !important;
+}
+
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p code,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] li code {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.14) !important;
+    border: 1px solid rgba(255,255,255,0.12);
 }
 
 [data-testid="stMetric"] {
@@ -158,10 +216,22 @@ html, body, [class*="css"]  {
     content: "";
     position: absolute;
     inset: 1px 1px auto 1px;
-    height: 42%;
+    height: 26%;
     border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0) 100%);
     pointer-events: none;
+    z-index: 0;
+}
+
+[data-testid="stMetric"] > *,
+.app-hero > *,
+.context-panel > *,
+.section-intro > *,
+.summary-card > *,
+.executive-card > *,
+.report-card > * {
+    position: relative;
+    z-index: 1;
 }
 
 [data-testid="stDataFrame"], [data-testid="stPlotlyChart"], [data-testid="stExpander"] {
@@ -581,12 +651,19 @@ div[data-testid="stMarkdownContainer"] p code {
     border-radius: 999px;
     padding: 0.35rem 0.8rem;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 6px 14px rgba(24, 33, 30, 0.05);
+    color: #22332d !important;
 }
 
 [data-testid="stRadio"] label[data-baseweb="radio"][aria-checked="true"] {
     background: linear-gradient(180deg, rgba(224, 241, 235, 0.95) 0%, rgba(204, 232, 222, 0.92) 100%);
     border-color: rgba(31, 106, 83, 0.28);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 18px rgba(31, 106, 83, 0.12);
+    color: #17382d !important;
+}
+
+[data-testid="stRadio"] label[data-baseweb="radio"] * {
+    color: inherit !important;
+    -webkit-text-fill-color: inherit !important;
 }
 
 [data-testid="stSelectbox"] label,
@@ -628,16 +705,16 @@ div[data-testid="stMarkdownContainer"] p code {
     height: auto;
     border-radius: 999px;
     padding: 0.42rem 0.85rem 0.46rem 0.85rem;
-    color: #42534d;
+    color: #31413b;
     background: transparent;
     border: 1px solid transparent;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .stTabs [aria-selected="true"] {
     background: linear-gradient(180deg, rgba(224, 241, 235, 0.95) 0%, rgba(206, 232, 222, 0.92) 100%) !important;
     border-color: rgba(31, 106, 83, 0.18) !important;
-    color: var(--accent) !important;
+    color: #163a2e !important;
     box-shadow: 0 8px 16px rgba(31, 106, 83, 0.1), inset 0 1px 0 rgba(255,255,255,0.82);
 }
 
@@ -645,9 +722,10 @@ div[data-testid="stMarkdownContainer"] p code {
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,0.42);
     background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(230, 241, 236, 0.9) 100%);
-    color: var(--accent);
+    color: #163a2e;
     padding: 0.2rem 0.55rem;
     font-size: 0.84rem;
+    font-weight: 700;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 16px rgba(24, 33, 30, 0.06);
 }
 
@@ -656,6 +734,23 @@ div[data-testid="stMarkdownContainer"] p code {
     background: linear-gradient(180deg, rgba(255,255,255,0.74) 0%, rgba(245, 241, 235, 0.9) 100%);
     border: 1px solid rgba(255,255,255,0.42) !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.78), 0 8px 18px rgba(24, 33, 30, 0.05);
+}
+
+[data-baseweb="select"] input,
+[data-baseweb="select"] div,
+[data-baseweb="select"] span,
+[data-baseweb="base-input"] input,
+[data-baseweb="base-input"] div,
+[data-baseweb="base-input"] span {
+    color: #22332d !important;
+    -webkit-text-fill-color: #22332d !important;
+}
+
+[data-baseweb="select"] input::placeholder,
+[data-baseweb="base-input"] input::placeholder {
+    color: #5b6a65 !important;
+    -webkit-text-fill-color: #5b6a65 !important;
+    opacity: 1 !important;
 }
 
 [data-testid="stForm"] {
@@ -687,6 +782,25 @@ div[data-testid="stMarkdownContainer"] p code {
     border-color: rgba(255,255,255,0.48);
     filter: brightness(1.03);
     transform: translateY(-1px);
+}
+
+.stButton > button:focus,
+.stButton > button:focus-visible,
+[data-testid="stFormSubmitButton"] button:focus,
+[data-testid="stFormSubmitButton"] button:focus-visible,
+[data-testid="stDownloadButton"] button:focus,
+[data-testid="stDownloadButton"] button:focus-visible,
+[data-testid="stPopover"] button:focus,
+[data-testid="stPopover"] button:focus-visible,
+[data-baseweb="select"] > div:focus-within,
+[data-baseweb="base-input"] > div:focus-within,
+.stTabs [data-baseweb="tab"]:focus,
+.stTabs [data-baseweb="tab"]:focus-visible,
+[data-testid="stSidebar"] [data-baseweb="tab"]:focus,
+[data-testid="stSidebar"] [data-baseweb="tab"]:focus-visible,
+[data-testid="stRadio"] label[data-baseweb="radio"]:focus-within {
+    outline: 3px solid rgba(15, 97, 73, 0.34) !important;
+    outline-offset: 2px !important;
 }
 
 @media (max-width: 960px) {
@@ -904,8 +1018,8 @@ def render_page_notes(page_name):
         This page reconnects the app to the research chemistry questions.
 
         Use it to review:
-        - whether ferric dose features are present in the current data,
-        - what those dose features imply in lb/day and mg/L terms,
+        - whether ferric and HCl chemistry features are present in the current data,
+        - what those chemistry features imply in mg/L dose-intensity terms and lb/day feed-context terms,
         - how odor signals appear to move relative to dose and flow context,
         - and what still needs to be added before the app can support struvite claims.
 
@@ -1088,7 +1202,7 @@ def build_research_alignment_df():
                 "objective": "2. Optimize FeCl3 and HCl for odor mitigation",
                 "current_repo_support": "Partial",
                 "where_to_review": "Operations Review and Chemistry & Dosing pages",
-                "current_status": "The app supports odor/event analysis well. Ferric dosing is partly represented; HCl dosage optimization is not yet data-backed in the repo.",
+                "current_status": "The app supports odor/event analysis well. Ferric and HCl dose intensity are partly represented, but chemistry optimization is not yet fully data-backed in the repo.",
             },
             {
                 "objective": "3. Minimize struvite formation",
@@ -1125,7 +1239,7 @@ def build_research_progress_df():
                 "lane": "Full-scale odor analytics",
                 "current_status": "Active",
                 "evidence": "Continuous NH3/H2S, flow, event, and chemistry context are integrated in the current dashboard and pipeline.",
-                "next_milestone": "Absorb new plant data and extend optimization analysis around mg/L dose and operating conditions.",
+                "next_milestone": "Absorb new plant data and extend optimization analysis around mg/L dose intensity and operating conditions.",
             },
             {
                 "lane": "Struvite and scaling outcomes",
@@ -1159,7 +1273,7 @@ def build_methods_log_template_df():
             {
                 "date": "2026-04-19",
                 "lane": "Full-scale analytics",
-                "experiment_or_method": "Dashboard mg/L dose and event-study workflow",
+                "experiment_or_method": "Dashboard mg/L dose-intensity and event-study workflow",
                 "status": "Active",
                 "what_worked": "Full-scale NH3/H2S and flow context can be visualized and tested.",
                 "what_failed": "",
@@ -1247,10 +1361,10 @@ def build_chemistry_review_table(df):
         sol = df["ferric_solution_lbs_per_day"].dropna()
         rows.append(
             {
-                "workflow_element": "Ferric solution dose",
-                "status": "Available" if not sol.empty else "Missing in current window",
+                "workflow_element": "Ferric solution feed context",
+                "status": "Available as secondary context" if not sol.empty else "Missing in current window",
                 "current_value": f"{sol.median():.1f} lb/day median" if not sol.empty else "NA",
-                "notes": "Derived from ferric availability assumptions and reduction date logic.",
+                "notes": "Bulk feed-rate context derived from ferric availability assumptions and reduction date logic. Use the mg/L dose-intensity row below for flow-normalized interpretation.",
             }
         )
 
@@ -1258,10 +1372,10 @@ def build_chemistry_review_table(df):
         sol = df["hcl_solution_lbs_per_day"].dropna()
         rows.append(
             {
-                "workflow_element": "HCl solution dose",
-                "status": "Available" if not sol.empty else "Missing in current window",
+                "workflow_element": "HCl solution feed context",
+                "status": "Available as secondary context" if not sol.empty else "Missing in current window",
                 "current_value": f"{sol.median():.1f} lb/day median" if not sol.empty else "NA",
-                "notes": "Derived from HCl availability assumptions and should be replaced by measured feed data when available.",
+                "notes": "Bulk acid feed-rate context derived from HCl availability assumptions. Use the mg/L dose-intensity row below for concentration-based interpretation.",
             }
         )
 
@@ -1269,10 +1383,10 @@ def build_chemistry_review_table(df):
     ferric_mgl_clean = ferric_mgl.dropna()
     rows.append(
         {
-            "workflow_element": "Ferric active dose intensity",
-            "status": "Available" if not ferric_mgl_clean.empty else "Missing in current window",
+            "workflow_element": "Ferric dose intensity",
+            "status": "Primary interpretation metric" if not ferric_mgl_clean.empty else "Missing in current window",
             "current_value": f"{ferric_mgl_clean.median():.2f} mg/L median" if not ferric_mgl_clean.empty else "NA",
-            "notes": "Converted from active lb/day using flow-derived MGD and the standard 8.34 wastewater conversion.",
+            "notes": "Primary engineering dose view. Converted from active lb/day using flow-derived MGD and the standard 8.34 wastewater conversion.",
         }
     )
 
@@ -1280,10 +1394,10 @@ def build_chemistry_review_table(df):
     hcl_mgl_clean = hcl_mgl.dropna()
     rows.append(
         {
-            "workflow_element": "HCl active dose intensity",
-            "status": "Available" if not hcl_mgl_clean.empty else "Missing in current window",
+            "workflow_element": "HCl dose intensity",
+            "status": "Primary interpretation metric" if not hcl_mgl_clean.empty else "Missing in current window",
             "current_value": f"{hcl_mgl_clean.median():.2f} mg/L median" if not hcl_mgl_clean.empty else "NA",
-            "notes": "Converted from active lb/day using flow-derived MGD and the standard 8.34 wastewater conversion.",
+            "notes": "Primary engineering dose view. Converted from active lb/day using flow-derived MGD and the standard 8.34 wastewater conversion.",
         }
     )
 
@@ -1293,7 +1407,7 @@ def build_chemistry_review_table(df):
             "workflow_element": "HCl dosing features",
             "status": "Available" if hcl_candidates else "Not yet implemented",
             "current_value": ", ".join(hcl_candidates) if hcl_candidates else "No HCl dose columns in current repo outputs",
-            "notes": "The notes make HCl optimization central, so measured feed data should replace representative assumptions when available.",
+            "notes": "The notes make HCl optimization central, so measured feed data should replace representative assumptions when available. Prefer mg/L dose intensity for interpretation and lb/day for supporting context.",
         }
     )
 
@@ -1459,7 +1573,8 @@ def render_variable_glossary():
         ],
         "Chemistry and events": [
             ("`ferric_available` / `hcl_available`", "Binary flags indicating whether Ferric or HCl was active/available at that time."),
-            ("`ferric_active_lbs_per_day`", "Estimated active ferric dose level per day when available in the data."),
+            ("`ferric_active_mg_per_L` / `hcl_active_mg_per_L`", "Flow-normalized chemistry dose intensity in mg/L. This is the preferred engineering view for comparing chemical application across changing flow."),
+            ("`ferric_active_lbs_per_day` / `hcl_active_lbs_per_day`", "Estimated active chemistry feed in lb/day. Useful as supporting feed context, but harder to compare directly across changing flow."),
             ("`Ferric_ON`, `Ferric_OFF`, `HCl_ON`, `HCl_OFF`", "Transition events detected when the binary chemistry flags switch on or off."),
         ],
         "Event-study metrics": [

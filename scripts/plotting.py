@@ -30,6 +30,65 @@ GRID_COLOR = "rgba(56,76,68,0.12)"
 EVENT_LINE_COLOR = "rgba(31,106,83,0.34)"
 PLANT_EVENT_COLOR = "#8f3f2b"
 
+DISPLAY_LABELS = {
+    "nh3_roll_mean_15min": "NH3 (ppm, 15-min avg)",
+    "h2s_roll_max_15min": "H2S (ppm, 15-min peak)",
+    "nh3_nh3_ppm": "NH3 (ppm, raw)",
+    "h2s_h2s_ppm": "H2S (ppm, raw)",
+    "nh3_temperature_°f": "NH3 sensor temperature (°F)",
+    "h2s_temperature_°f": "H2S sensor temperature (°F)",
+    "total_gpm": "Total flow (GPM)",
+    "east_sludge_out_gpm_combined": "East sludge flow (GPM)",
+    "lbs_per_min": "Transferred volatile solids (lbs/min)",
+    "transferred_lbs_vol": "Transferred volatile solids (lbs/min)",
+    "transferred_lbs_vol_daily": "Transferred volatile solids (lbs/day)",
+    "flow_gal_hr": "Flow (gal/hr)",
+    "lbs_volatile": "Transferred volatile solids (lbs/hr)",
+    "fecl3_lbs": "Ferric chloride (lbs/hr)",
+    "ferric_solution_lbs_per_day": "Ferric solution feed context (lb/day)",
+    "ferric_active_lbs_per_day": "Ferric active feed context (lb/day)",
+    "ferric_active_mg_per_L": "Ferric dose intensity (mg/L)",
+    "hcl_solution_lbs_per_day": "HCl solution feed context (lb/day)",
+    "hcl_active_lbs_per_day": "HCl active feed context (lb/day)",
+    "hcl_active_mg_per_L": "HCl dose intensity (mg/L)",
+    "nh3_per_lb": "NH3 intensity (ppm per lb)",
+    "h2s_per_lb": "H2S intensity (ppm per lb)",
+    "nh3_std": "NH3 variability (ppm std)",
+    "h2s_std": "H2S variability (ppm std)",
+    "nh3_coverage": "NH3 coverage (%)",
+    "h2s_coverage": "H2S coverage (%)",
+    "water_coverage": "Flow coverage (%)",
+    "n_obs_nh3": "NH3 observations (count)",
+    "n_obs_h2s": "H2S observations (count)",
+    "n_obs_water": "Flow observations (count)",
+    "nh3_monthly_mean": "NH3 monthly mean (ppm)",
+    "h2s_monthly_mean": "H2S monthly mean (ppm)",
+    "total_gpm_monthly_mean": "Flow monthly mean (GPM)",
+    "transferred_lbs_vol_monthly_mean": "Transferred solids monthly mean (lbs/day)",
+    "nh3_weekday_mean": "NH3 weekday mean (ppm)",
+    "h2s_weekday_mean": "H2S weekday mean (ppm)",
+    "total_gpm_weekday_mean": "Flow weekday mean (GPM)",
+    "transferred_lbs_vol_weekday_mean": "Transferred solids weekday mean (lbs/day)",
+}
+
+
+def display_label(column_name):
+    if column_name is None:
+        return ""
+    if column_name in DISPLAY_LABELS:
+        return DISPLAY_LABELS[column_name]
+    text = str(column_name).replace("_", " ").strip()
+    if not text:
+        return str(column_name)
+    words = text.split()
+    normalized = []
+    for word in words:
+        if word.lower() in {"nh3", "h2s", "hcl", "gpm", "mg/l", "ppm", "ph"}:
+            normalized.append(word.upper() if word.lower() != "ph" else "pH")
+        else:
+            normalized.append(word.capitalize())
+    return " ".join(normalized)
+
 
 def apply_executive_axes(fig):
     fig.update_layout(
@@ -72,6 +131,28 @@ def apply_executive_axes(fig):
 
 def has_data(df, col):
     return df is not None and col in df.columns and df[col].notna().any()
+
+
+def axis_scale_settings(series, scale_mode):
+    clean = pd.to_numeric(series, errors="coerce").dropna()
+    if clean.empty:
+        return {}
+
+    mode = (scale_mode or "auto").lower()
+    if mode == "log":
+        positive = clean[clean > 0]
+        if not positive.empty and len(positive) == len(clean):
+            return {"type": "log"}
+        return {}
+
+    if mode == "focused":
+        lo = float(clean.quantile(0.02))
+        hi = float(clean.quantile(0.98))
+        if np.isfinite(lo) and np.isfinite(hi) and hi > lo:
+            pad = (hi - lo) * 0.08
+            return {"range": [lo - pad, hi + pad]}
+
+    return {}
 
 
 def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant_events=None):
@@ -137,6 +218,8 @@ def dual_axis_figure(
     rangeslider=True,
     margin=None,
     secondary_tickformat=None,
+    y1_scale_mode="auto",
+    y2_scale_mode="auto",
 ):
     fig = go.Figure()
 
@@ -233,6 +316,14 @@ def dual_axis_figure(
         ),
     )
 
+    y1_settings = axis_scale_settings(plot_df[y1_col], y1_scale_mode)
+    if y1_settings:
+        fig.update_layout(yaxis={**fig.layout.yaxis.to_plotly_json(), **y1_settings})
+    if y2_col in plot_df.columns:
+        y2_settings = axis_scale_settings(plot_df[y2_col], y2_scale_mode)
+        if y2_settings:
+            fig.update_layout(yaxis2={**fig.layout.yaxis2.to_plotly_json(), **y2_settings})
+
     if add_events:
         add_event_lines_plotly(fig, add_events, plant_events=plant_events)
     if rangeslider:
@@ -303,7 +394,7 @@ def event_study_figure(summary, title, ylabel):
 
 def correlation_heatmap(df, cols, title="Correlation Heatmap"):
     corr = df[cols].corr(numeric_only=True)
-    labels = [str(col).replace("_", " ") for col in corr.columns]
+    labels = [display_label(col) for col in corr.columns]
     fig = go.Figure(
         data=go.Heatmap(
             z=corr.values,
@@ -434,7 +525,7 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
             marker=marker_kwargs,
             name="Observations",
             text=plot_df.index.astype(str) if isinstance(plot_df.index, pd.DatetimeIndex) else None,
-            hovertemplate=f"{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<extra></extra>",
+            hovertemplate=f"{display_label(x_col)}: %{{x:.3f}}<br>{display_label(y_col)}: %{{y:.3f}}<extra></extra>",
         )
     )
 
@@ -455,9 +546,9 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
             )
 
     fig.update_layout(
-        title=title or f"{y_col} vs {x_col}",
-        xaxis_title=x_col,
-        yaxis_title=y_col,
+        title=title or f"{display_label(y_col)} vs {display_label(x_col)}",
+        xaxis_title=display_label(x_col),
+        yaxis_title=display_label(y_col),
         margin=dict(l=100, r=100, t=100, b=100),
         **DEFAULT_LAYOUT,
     )

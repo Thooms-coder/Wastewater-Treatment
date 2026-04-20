@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from scripts.constants import EVENT_COLUMNS, FLOW, H2S, NH3, RAW_H2S, RAW_NH3, TEMP_H2S, TEMP_NH3, WINDOW_48H
-from scripts.plotting import multi_panel_figure
+from scripts.plotting import display_label, multi_panel_figure
 
 from app.dashboard_ui import (
     build_chemistry_review_table,
@@ -151,19 +151,22 @@ def render_executive_brief_page(ctx):
             "Use one chart to anchor the briefing. This should show the main odor signal against the most relevant operational context for the reporting conversation.",
         )
         st.caption("Select the pairing you want to use as the lead visual in the reporting narrative.")
-        render_help_tip("Use `total_gpm` or `transferred_lbs_vol` when you want to compare odor against process load. Use temperature when you want sensor or environmental context.")
+        render_help_tip("Use `total_gpm` or `transferred_lbs_vol` when you want to compare odor against process load. Use temperature when you want sensor or environmental context. If one signal has extreme spikes, switch the axis mode to `Focused` to trim the most extreme peaks for exploration.")
         with st.form("executive_headline_form"):
             primary_left = st.selectbox("Primary signal", top_cols, index=0)
             primary_right = st.selectbox("Secondary signal", top_cols, index=min(1, len(top_cols) - 1))
+            y_scale_mode = st.selectbox("Axis scaling", ["Auto", "Focused", "Log"], index=0)
             st.form_submit_button("Update headline chart")
         fig = dual_axis_figure(
             master_df,
             primary_left,
             primary_right,
-            primary_left,
-            primary_right,
-            f"{primary_left} vs {primary_right}",
+            display_label(primary_left),
+            display_label(primary_right),
+            f"{display_label(primary_left)} vs {display_label(primary_right)}",
             add_events=all_events,
+            y1_scale_mode=y_scale_mode.lower(),
+            y2_scale_mode=y_scale_mode.lower(),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -244,7 +247,7 @@ def render_operations_review_page(ctx):
             "Interactive Timeline Builder",
             "Adjust resolution and signal pairing to match the scale of the question. Short spikes, hourly context, and longer trends should not be read from the same view.",
         )
-        render_help_tip("Choose `1-minute` for short spikes, `1-hour` for operating context, and `Daily` for management-level trend summaries.")
+        render_help_tip("Choose `1-minute` for short spikes, `1-hour` for operating context, and `Daily` for management-level trend summaries. Use `Focused` axis scaling when rare peaks flatten the rest of the chart.")
         with st.form("ops_timeline_form"):
             resolution = st.radio("Resolution", ["1-minute", "1-hour", "Daily"], horizontal=True)
             if resolution == "1-minute":
@@ -260,6 +263,7 @@ def render_operations_review_page(ctx):
 
             left_col = st.selectbox("Primary y-axis", cols, index=cols.index(default_left) if default_left in cols else 0)
             right_col = st.selectbox("Secondary y-axis", cols, index=cols.index(default_right) if default_right in cols else 0)
+            y_scale_mode = st.selectbox("Axis scaling", ["Auto", "Focused", "Log"], index=0)
             show_events = st.checkbox("Overlay transition markers", value=True)
             st.form_submit_button("Update timeline")
         st.caption(
@@ -271,11 +275,13 @@ def render_operations_review_page(ctx):
             active_df,
             left_col,
             right_col,
-            left_col,
-            right_col,
-            f"{left_col} vs {right_col} ({resolution})",
+            display_label(left_col),
+            display_label(right_col),
+            f"{display_label(left_col)} vs {display_label(right_col)} ({resolution})",
             add_events=all_events if show_events else None,
             bar_second=(resolution == "1-hour" and right_col in ["flow_gal_hr", "lbs_volatile", "fecl3_lbs"]),
+            y1_scale_mode=y_scale_mode.lower(),
+            y2_scale_mode=y_scale_mode.lower(),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -297,7 +303,7 @@ def render_operations_review_page(ctx):
             if hourly_df is not None and "lbs_volatile" in hourly_df.columns:
                 hourly_plot = hourly_df[["lbs_volatile"]].rename(columns={"lbs_volatile": "Transferred Lbs Vol"})
                 merged = master_df[[H2S]].join(hourly_plot, how="outer")
-                st.plotly_chart(dual_axis_figure(merged, H2S, "Transferred Lbs Vol", "H₂S (ppm)", "Transferred Lbs Vol", "H₂S & Hourly Transferred Lbs Vol", add_events=all_events, bar_second=True), use_container_width=True)
+                st.plotly_chart(dual_axis_figure(merged, H2S, "Transferred Lbs Vol", "H₂S (ppm)", "Transferred volatile solids (lbs/hr)", "H₂S and hourly transferred volatile solids", add_events=all_events, bar_second=True), use_container_width=True)
             else:
                 st.info("Load-context shortcut is not available in the current window.")
 
@@ -337,7 +343,7 @@ def render_operations_review_page(ctx):
             }
             y1, y2, l1, l2, bar = pairs[signal_mode]
             st.plotly_chart(
-                event_window_figure(window_df, y1, y2, l1, l2, f"{signal_mode} Around {event_family} {event_direction}", bar=bar),
+                event_window_figure(window_df, y1, y2, l1, l2, f"{signal_mode} around {event_family} {event_direction} event", bar=bar),
                 use_container_width=True,
             )
 
@@ -460,7 +466,7 @@ def render_chemistry_dosing_page(ctx):
 
     render_page_header(
         "Chemistry & Dosing",
-        "Review ferric dosing context, convert dose to operational units, and track what is still missing for HCl optimization and struvite analysis.",
+        "Review chemistry dose intensity in mg/L, keep feed context in lb/day, and track what is still missing for HCl optimization and struvite analysis.",
     )
     render_page_notes("Chemistry & Dosing")
     render_context_band(
@@ -476,12 +482,12 @@ def render_chemistry_dosing_page(ctx):
             {
                 "eyebrow": "Dose intensity",
                 "title": f"Ferric {metric_value(pd.DataFrame({'ferric_active_mg_per_L': compute_ferric_mgL_series(master_df)}), 'ferric_active_mg_per_L')} mg/L median",
-                "body": "Read ferric dose in engineering units first; lb/day alone is harder to compare across changing flow conditions.",
+                "body": "Read ferric dose intensity in mg/L first so chemistry stays comparable as plant flow changes; use lb/day only as supporting feed context.",
             },
             {
                 "eyebrow": "Acid context",
                 "title": f"HCl {metric_value(pd.DataFrame({'hcl_active_mg_per_L': compute_hcl_mgL_series(master_df)}), 'hcl_active_mg_per_L')} mg/L median",
-                "body": "HCl is now surfaced in the same mg/L frame so dosage can be compared with odor behavior more directly.",
+                "body": "HCl is shown as dose intensity in the same mg/L frame so dose-response patterns can be read directly without mentally normalizing for flow.",
             },
             {
                 "eyebrow": "Maturity",
@@ -514,43 +520,72 @@ def render_chemistry_dosing_page(ctx):
             "Chemistry Workflow Status",
             "This section surfaces the chemistry-oriented fields already present in the repo so the app can be evaluated against the research notes rather than only against the odor UI.",
         )
-        render_help_tip("Ferric and HCl dose features are contextual right now. They are useful for interpretation, but measured feed logs should replace representative assumptions.")
+        render_help_tip("Ferric and HCl dose-intensity features are contextual right now. They are useful for interpretation, but measured feed logs should replace representative assumptions.")
         with st.expander("View chemistry workflow table", expanded=True):
             st.dataframe(build_chemistry_review_table(master_df), use_container_width=True, height=220)
 
         render_section_intro(
             "Dose And Odor Timeline",
-            "This chart is the first step toward the optimization workflow described in the notes: compare dose context, odor response, and operating load inside the same window.",
+            "This chart is the first step toward the optimization workflow described in the notes: compare chemistry dose intensity, odor response, and operating load inside the same window.",
         )
-        render_help_tip("`ferric_active_mg_per_L` and `hcl_active_mg_per_L` are computed from active lb/day and flow-derived MGD using the standard 8.34 conversion.")
+        render_help_tip("Dose intensity is presented in mg/L first because that is the clearest engineering concentration view. `lb/day` remains available as secondary feed-rate context. `ferric_active_mg_per_L` and `hcl_active_mg_per_L` are computed from active lb/day and flow-derived MGD using the standard 8.34 conversion. If a few dose spikes flatten the chart, switch axis scaling to `Focused`.")
         chemistry_plot_options = [
             c for c in [
                 NH3, H2S,
-                "ferric_active_mg_per_L", "ferric_active_lbs_per_day", "ferric_solution_lbs_per_day",
-                "hcl_active_mg_per_L", "hcl_active_lbs_per_day", "hcl_solution_lbs_per_day",
+                "ferric_active_mg_per_L", "hcl_active_mg_per_L",
+                "ferric_active_lbs_per_day", "hcl_active_lbs_per_day",
+                "ferric_solution_lbs_per_day", "hcl_solution_lbs_per_day",
                 "total_gpm", "lbs_per_min",
             ] if c in chemistry_df.columns
         ]
         if len(chemistry_plot_options) < 2:
             st.info("Chemistry plotting requires at least two available chemistry or operating columns in the current window.")
         else:
+            default_left_col = "ferric_active_mg_per_L" if ("ferric_active_mg_per_L" in chemistry_plot_options and chemistry_df.get("ferric_active_mg_per_L", pd.Series(dtype=float)).notna().any()) else None
+            if default_left_col is None and "ferric_active_lbs_per_day" in chemistry_plot_options:
+                default_left_col = "ferric_active_lbs_per_day"
+            if default_left_col is None:
+                default_left_col = chemistry_plot_options[0]
+
+            default_right_col = None
+            if "hcl_active_mg_per_L" in chemistry_plot_options and chemistry_df.get("hcl_active_mg_per_L", pd.Series(dtype=float)).notna().any():
+                default_right_col = "hcl_active_mg_per_L"
+            elif "hcl_active_lbs_per_day" in chemistry_plot_options and chemistry_df.get("hcl_active_lbs_per_day", pd.Series(dtype=float)).notna().any():
+                default_right_col = "hcl_active_lbs_per_day"
+            elif len(chemistry_plot_options) > 1:
+                default_right_col = chemistry_plot_options[1]
+            else:
+                default_right_col = chemistry_plot_options[0]
+
+            default_left = chemistry_plot_options.index(default_left_col)
+            default_right = chemistry_plot_options.index(default_right_col)
+            if default_right == default_left and len(chemistry_plot_options) > 1:
+                default_right = 1 if default_left == 0 else 0
             with st.form("chemistry_plot_form"):
-                left_col = st.selectbox("Primary chemistry signal", chemistry_plot_options, index=0, key="chem_left")
-                right_col = st.selectbox("Secondary chemistry signal", chemistry_plot_options, index=min(1, len(chemistry_plot_options) - 1), key="chem_right")
+                left_col = st.selectbox("Primary chemistry signal", chemistry_plot_options, index=default_left, key="chem_left")
+                right_col = st.selectbox("Secondary chemistry signal / context", chemistry_plot_options, index=default_right, key="chem_right")
+                y_scale_mode = st.selectbox("Axis scaling", ["Auto", "Focused", "Log"], index=1, key="chem_scale")
                 st.form_submit_button("Update chemistry view")
+            missing_in_window = [display_label(col) for col in [left_col, right_col] if col in chemistry_df.columns and not chemistry_df[col].notna().any()]
+            if missing_in_window:
+                st.warning(f"No plottable values in the current window for: {', '.join(missing_in_window)}.")
+            elif "hcl_active_mg_per_L" in {left_col, right_col} and not chemistry_df["hcl_active_mg_per_L"].notna().any():
+                st.info("HCl dose intensity (mg/L) is empty in this window because flow-normalized conversion requires non-zero `total_gpm`. Switch to `HCl active feed context (lb/day)` to view the assumed HCl series directly.")
             st.plotly_chart(
                 dual_axis_figure(
                     chemistry_df,
                     left_col,
                     right_col,
-                    left_col,
-                    right_col,
-                    f"{left_col} vs {right_col}",
+                    display_label(left_col),
+                    display_label(right_col),
+                    f"{display_label(left_col)} vs {display_label(right_col)}",
                     add_events=all_events,
                     bar_second=right_col in {
                         "ferric_solution_lbs_per_day", "ferric_active_lbs_per_day",
                         "hcl_solution_lbs_per_day", "hcl_active_lbs_per_day",
                     },
+                    y1_scale_mode=y_scale_mode.lower(),
+                    y2_scale_mode=y_scale_mode.lower(),
                 ),
                 use_container_width=True,
             )
@@ -714,8 +749,21 @@ def render_performance_coverage_page(ctx):
             with st.form("perf_daily_form"):
                 left = st.selectbox("Daily primary", cols, key="daily_left")
                 right = st.selectbox("Daily secondary", cols, index=min(1, len(cols) - 1), key="daily_right")
+                y_scale_mode = st.selectbox("Axis scaling", ["Auto", "Focused", "Log"], index=0, key="daily_scale")
                 st.form_submit_button("Update daily view")
-            st.plotly_chart(dual_axis_figure(daily_df, left, right, left, right, f"Daily {left} vs {right}"), use_container_width=True)
+            st.plotly_chart(
+                dual_axis_figure(
+                    daily_df,
+                    left,
+                    right,
+                    display_label(left),
+                    display_label(right),
+                    f"Daily {display_label(left)} vs {display_label(right)}",
+                    y1_scale_mode=y_scale_mode.lower(),
+                    y2_scale_mode=y_scale_mode.lower(),
+                ),
+                use_container_width=True,
+            )
             with st.expander("View daily aggregate table", expanded=False):
                 st.dataframe(daily_df[cols + available_columns(daily_df, ["n_obs_nh3", "n_obs_h2s", "n_obs_water", "nh3_coverage", "h2s_coverage", "water_coverage"])], use_container_width=True, height=280)
 
@@ -725,7 +773,27 @@ def render_performance_coverage_page(ctx):
         else:
             display_monthly = monthly_df.copy()
             display_monthly.index = build_month_labels(display_monthly.index)
-            st.bar_chart(display_monthly[available_columns(display_monthly, ["nh3_monthly_mean", "h2s_monthly_mean", "total_gpm_monthly_mean", "transferred_lbs_vol_monthly_mean"])])
+            monthly_cols = available_columns(display_monthly, ["nh3_monthly_mean", "h2s_monthly_mean", "total_gpm_monthly_mean", "transferred_lbs_vol_monthly_mean"])
+            st.caption("Monthly averages by selected reporting window month.")
+            monthly_fig = go.Figure()
+            for col in monthly_cols:
+                monthly_fig.add_trace(
+                    go.Bar(
+                        x=list(display_monthly.index),
+                        y=display_monthly[col],
+                        name=display_label(col),
+                    )
+                )
+            monthly_fig.update_layout(
+                title="Monthly summary",
+                barmode="group",
+                xaxis_title="Month",
+                yaxis_title="Value",
+                hovermode="x unified",
+                legend=dict(orientation="h"),
+                template="plotly_white",
+            )
+            st.plotly_chart(monthly_fig, use_container_width=True)
             with st.expander("View monthly summary table", expanded=False):
                 st.dataframe(display_monthly, use_container_width=True, height=280)
 
@@ -736,7 +804,27 @@ def render_performance_coverage_page(ctx):
             display_weekday = weekday_df.copy()
             if "weekday_name" in display_weekday.columns:
                 display_weekday = display_weekday.set_index("weekday_name")
-            st.bar_chart(display_weekday[available_columns(display_weekday, ["nh3_weekday_mean", "h2s_weekday_mean", "total_gpm_weekday_mean", "transferred_lbs_vol_weekday_mean"])])
+            weekday_cols = available_columns(display_weekday, ["nh3_weekday_mean", "h2s_weekday_mean", "total_gpm_weekday_mean", "transferred_lbs_vol_weekday_mean"])
+            st.caption("Weekday averages across the selected reporting window.")
+            weekday_fig = go.Figure()
+            for col in weekday_cols:
+                weekday_fig.add_trace(
+                    go.Bar(
+                        x=list(display_weekday.index),
+                        y=display_weekday[col],
+                        name=display_label(col),
+                    )
+                )
+            weekday_fig.update_layout(
+                title="Weekday summary",
+                barmode="group",
+                xaxis_title="Weekday",
+                yaxis_title="Value",
+                hovermode="x unified",
+                legend=dict(orientation="h"),
+                template="plotly_white",
+            )
+            st.plotly_chart(weekday_fig, use_container_width=True)
             with st.expander("View weekday summary table", expanded=False):
                 st.dataframe(display_weekday, use_container_width=True, height=280)
 
@@ -746,7 +834,26 @@ def render_performance_coverage_page(ctx):
         else:
             coverage_cols = available_columns(daily_df, ["nh3_coverage", "h2s_coverage", "water_coverage"])
             if coverage_cols:
-                st.line_chart(daily_df[coverage_cols])
+                st.caption("Daily coverage share by signal. Higher values mean more complete daily records.")
+                coverage_fig = go.Figure()
+                for col in coverage_cols:
+                    coverage_fig.add_trace(
+                        go.Scatter(
+                            x=daily_df.index,
+                            y=daily_df[col],
+                            mode="lines",
+                            name=display_label(col),
+                        )
+                    )
+                coverage_fig.update_layout(
+                    title="Daily data coverage",
+                    xaxis_title="Date",
+                    yaxis_title="Coverage share",
+                    hovermode="x unified",
+                    legend=dict(orientation="h"),
+                    template="plotly_white",
+                )
+                st.plotly_chart(coverage_fig, use_container_width=True)
                 with st.expander("View coverage detail table", expanded=False):
                     st.dataframe(daily_df[coverage_cols + available_columns(daily_df, ["n_obs_nh3", "n_obs_h2s", "n_obs_water"])], use_container_width=True, height=260)
 
@@ -770,10 +877,11 @@ def render_performance_coverage_page(ctx):
         color_col = st.selectbox("Color by (optional)", [None] + scatter_cols, index=0, key="perf_scatter_color")
         st.form_submit_button("Update relationship screening")
     if len(selected) >= 2:
-        st.plotly_chart(correlation_heatmap(analysis_df, selected), use_container_width=True)
+        st.plotly_chart(correlation_heatmap(analysis_df, selected, title="Correlation heatmap of selected metrics"), use_container_width=True)
     else:
         st.info("Select at least two columns for the correlation heatmap.")
-    st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=f"{y_col} vs {x_col}"), use_container_width=True)
+    scatter_title = f"{display_label(y_col)} vs {display_label(x_col)}"
+    st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=scatter_title), use_container_width=True)
 
 
 def render_diagnostics_data_page(ctx):
@@ -848,10 +956,17 @@ def render_diagnostics_data_page(ctx):
         st.metric("Anomalies found", f"{len(anomalies):,}")
 
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=master_df.index, y=master_df[target_col], mode="lines", name=target_col))
+        fig.add_trace(go.Scatter(x=master_df.index, y=master_df[target_col], mode="lines", name=display_label(target_col)))
         if not anomalies.empty:
             fig.add_trace(go.Scatter(x=anomalies.index, y=anomalies[target_col], mode="markers", name="Anomalies", marker=dict(size=7)))
-        fig.update_layout(title=f"{target_col} anomalies", template="plotly_white", hovermode="x unified", legend=dict(orientation="h"))
+        fig.update_layout(
+            title=f"Anomalies in {display_label(target_col)}",
+            template="plotly_white",
+            hovermode="x unified",
+            legend=dict(orientation="h"),
+            xaxis_title="Date / time",
+            yaxis_title=display_label(target_col),
+        )
         fig.update_xaxes(rangeslider_visible=True)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -860,7 +975,7 @@ def render_diagnostics_data_page(ctx):
         z_fig.add_trace(go.Scatter(x=z_df.index, y=z_df["z_score"], mode="lines", name="z-score"))
         z_fig.add_hline(y=threshold, line_dash="dash")
         z_fig.add_hline(y=-threshold, line_dash="dash")
-        z_fig.update_layout(title="Rolling z-score", template="plotly_white", hovermode="x unified")
+        z_fig.update_layout(title=f"Rolling z-score for {display_label(target_col)}", template="plotly_white", hovermode="x unified", xaxis_title="Date / time", yaxis_title="z-score")
         st.plotly_chart(z_fig, use_container_width=True)
 
         with st.expander("View anomaly rows", expanded=False):
@@ -916,7 +1031,7 @@ def render_diagnostics_data_page(ctx):
             if len(numeric_candidates) >= 1:
                 dist_col = st.selectbox("Numeric column", numeric_candidates, key="diag_dist_col")
                 hist = go.Figure(data=[go.Histogram(x=view_df[dist_col].dropna(), nbinsx=50)])
-                hist.update_layout(title=f"Distribution of {dist_col}", template="plotly_white")
+                hist.update_layout(title=f"Distribution of {display_label(dist_col)}", template="plotly_white", xaxis_title=display_label(dist_col), yaxis_title="Count")
                 st.plotly_chart(hist, use_container_width=True)
 
 

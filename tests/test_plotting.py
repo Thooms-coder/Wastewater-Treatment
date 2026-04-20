@@ -39,6 +39,58 @@ class PlottingTests(unittest.TestCase):
         self.assertEqual(fig.data[1].name, "Right")
         self.assertGreaterEqual(len(fig.layout.shapes), 1)
 
+    def test_dual_axis_figure_focused_scaling_sets_trimmed_ranges(self):
+        index = pd.date_range("2026-01-01", periods=6, freq="h")
+        df = pd.DataFrame(
+            {
+                "left_signal": [1.0, 1.1, 1.2, 1.3, 1.4, 50.0],
+                "right_signal": [10.0, 10.1, 10.2, 10.3, 10.4, 200.0],
+            },
+            index=index,
+        )
+
+        fig = dual_axis_figure(
+            df,
+            "left_signal",
+            "right_signal",
+            "Left",
+            "Right",
+            "Focused Dual Axis",
+            rangeslider=False,
+            y1_scale_mode="focused",
+            y2_scale_mode="focused",
+        )
+
+        self.assertIsNotNone(fig.layout.yaxis.range)
+        self.assertIsNotNone(fig.layout.yaxis2.range)
+        self.assertLess(fig.layout.yaxis.range[1], 50.0)
+        self.assertLess(fig.layout.yaxis2.range[1], 200.0)
+
+    def test_dual_axis_figure_log_scaling_sets_log_axis_for_positive_series(self):
+        index = pd.date_range("2026-01-01", periods=4, freq="h")
+        df = pd.DataFrame(
+            {
+                "left_signal": [1.0, 10.0, 100.0, 1000.0],
+                "right_signal": [2.0, 20.0, 200.0, 2000.0],
+            },
+            index=index,
+        )
+
+        fig = dual_axis_figure(
+            df,
+            "left_signal",
+            "right_signal",
+            "Left",
+            "Right",
+            "Log Dual Axis",
+            rangeslider=False,
+            y1_scale_mode="log",
+            y2_scale_mode="log",
+        )
+
+        self.assertEqual(fig.layout.yaxis.type, "log")
+        self.assertEqual(fig.layout.yaxis2.type, "log")
+
     def test_event_study_figure_contains_iqr_band_and_event_line(self):
         summary = pd.DataFrame(
             {

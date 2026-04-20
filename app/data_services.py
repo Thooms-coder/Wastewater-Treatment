@@ -16,6 +16,7 @@ from scripts.analytics import (
     summarize_event as shared_summarize_event,
     window_slice as shared_window_slice,
 )
+from scripts.chemistry_features import add_ferric_dose_features, add_hcl_dose_features
 from scripts.constants import (
     BASELINE_WINDOW,
     DIG_GPM,
@@ -158,6 +159,11 @@ def enrich_operational_features(df):
         df["nh3_per_lb"] = df[NH3] / (df["lbs_per_min"] + eps)
     if has_data(df, H2S):
         df["h2s_per_lb"] = df[H2S] / (df["lbs_per_min"] + eps)
+
+    if "ferric_available" in df.columns and "ferric_active_lbs_per_day" not in df.columns:
+        df = add_ferric_dose_features(df)
+    if "hcl_available" in df.columns and "hcl_active_lbs_per_day" not in df.columns:
+        df = add_hcl_dose_features(df)
 
     return df
 
@@ -363,7 +369,18 @@ def build_period_summaries(daily):
     return monthly, weekday
 
 
-def dual_axis_figure(df, y1_col, y2_col, y1_label, y2_label, title, add_events=None, bar_second=False):
+def dual_axis_figure(
+    df,
+    y1_col,
+    y2_col,
+    y1_label,
+    y2_label,
+    title,
+    add_events=None,
+    bar_second=False,
+    y1_scale_mode="auto",
+    y2_scale_mode="auto",
+):
     return shared_dual_axis_figure(
         df,
         y1_col,
@@ -374,6 +391,8 @@ def dual_axis_figure(df, y1_col, y2_col, y1_label, y2_label, title, add_events=N
         add_events=add_events,
         plant_events=PLANT_EVENTS if add_events else None,
         bar_second=bar_second,
+        y1_scale_mode=y1_scale_mode,
+        y2_scale_mode=y2_scale_mode,
     )
 
 

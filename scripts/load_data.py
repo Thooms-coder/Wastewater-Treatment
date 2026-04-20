@@ -78,6 +78,39 @@ def remove_duplicate_columns(df, label=""):
     return df
 
 
+def detect_water_header_row(raw):
+    """
+    Some plant exports contain a duplicated two-row header where the first row has
+    a generic label like "Digesters Sludge Out Flow" and the second row contains
+    the real West/East flow column names. Prefer the row with the strongest match
+    to the expected operational headers.
+    """
+    header_candidates = []
+    expected_terms = [
+        "west sludge out",
+        "east sludge out",
+        "eest sludge out",
+        "digesters sludge out flow",
+        "gbt sludge feed pump",
+    ]
+
+    for i in range(min(len(raw), 12)):
+        values = raw.iloc[i].astype(str).str.strip()
+        if not values.str.contains("Time", case=False).any():
+            continue
+
+        lowered = values.str.lower()
+        score = sum(lowered.str.contains(term, regex=False).sum() for term in expected_terms)
+        unnamed_penalty = lowered.str.startswith("unnamed").sum()
+        header_candidates.append((score, -unnamed_penalty, i))
+
+    if not header_candidates:
+        return None
+
+    header_candidates.sort(reverse=True)
+    return header_candidates[0][2]
+
+
 # --------------------------------------------------
 # H2S Loader
 # --------------------------------------------------
@@ -157,12 +190,8 @@ def load_water_reclamation_data():
         # Read raw without header
         raw = pd.read_excel(file, header=None)
 
-        # Find header row containing "Time"
-        header_row = None
-        for i in range(len(raw)):
-            if raw.iloc[i].astype(str).str.contains("Time", case=False).any():
-                header_row = i
-                break
+        # Find the strongest header row containing the real flow labels.
+        header_row = detect_water_header_row(raw)
 
         if header_row is None:
             raise ValueError(f"Could not find header row in {file.name}")

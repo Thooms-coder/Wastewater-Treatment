@@ -8,6 +8,7 @@ from app.data_services import (
     build_period_summaries,
     compute_event_metrics_table,
     compute_event_study_summary,
+    enrich_operational_features,
     filter_time_indexed_df,
 )
 from scripts.constants import H2S, NH3
@@ -92,6 +93,26 @@ class DataServicesTests(unittest.TestCase):
         self.assertEqual(hourly.iloc[1][NH3], 8.0)
         self.assertEqual(hourly.iloc[1][H2S], 3.0)
         self.assertGreater(hourly.iloc[0]["flow_gal_hr"], 0)
+
+    def test_enrich_operational_features_backfills_missing_hcl_dose_columns(self):
+        index = pd.date_range("2025-10-02 14:30", periods=3, freq="h")
+        df = pd.DataFrame(
+            {
+                "west_sludge_out_gpm": [100.0, 100.0, 100.0],
+                "east_sludge_out_gpm": [50.0, 50.0, 50.0],
+                "digesters_sludge_out_flow": [25.0, 25.0, 25.0],
+                "hcl_available": [1, 1, 0],
+                "ferric_available": [1, 1, 1],
+            },
+            index=index,
+        )
+
+        result = enrich_operational_features(df)
+
+        self.assertIn("hcl_solution_lbs_per_day", result.columns)
+        self.assertIn("hcl_active_lbs_per_day", result.columns)
+        self.assertGreater(result.iloc[0]["hcl_active_lbs_per_day"], 0)
+        self.assertEqual(result.iloc[2]["hcl_active_lbs_per_day"], 0)
 
     def test_compute_event_metrics_table_computes_pre_post_effects(self):
         index = pd.date_range("2026-01-01 00:00", periods=220, freq="h")
