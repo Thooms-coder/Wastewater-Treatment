@@ -117,7 +117,7 @@ dist/
 
 # ==================================================
 
-# !data/raw/.gitkeep
+data/raw/.gitkeep
 
 # !data/processed/.gitkeep
 

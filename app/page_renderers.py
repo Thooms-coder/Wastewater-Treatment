@@ -767,6 +767,14 @@ def render_performance_coverage_page(ctx):
                 right = st.selectbox("Daily secondary", cols, index=min(1, len(cols) - 1), key="daily_right")
                 y_scale_mode = st.selectbox("Axis scaling", ["Auto", "Focused", "Log"], index=0, key="daily_scale")
                 st.form_submit_button("Update daily view")
+            left_days = int(daily_df[left].notna().sum()) if left in daily_df.columns else 0
+            right_days = int(daily_df[right].notna().sum()) if right in daily_df.columns else 0
+            total_days = len(daily_df)
+            st.caption(
+                f"{display_label(left)} available on {left_days} of {total_days} days. "
+                f"{display_label(right)} available on {right_days} of {total_days} days. "
+                "The chart keeps the full selected date range and leaves gaps where the daily signal is missing."
+            )
             st.plotly_chart(
                 dual_axis_figure(
                     daily_df,
@@ -777,6 +785,8 @@ def render_performance_coverage_page(ctx):
                     f"Daily {display_label(left)} vs {display_label(right)}",
                     y1_scale_mode=y_scale_mode.lower(),
                     y2_scale_mode=y_scale_mode.lower(),
+                    keep_full_x_span=True,
+                    xaxis_range=[daily_df.index.min(), daily_df.index.max()],
                 ),
                 use_container_width=True,
                 key="perf_daily_chart",

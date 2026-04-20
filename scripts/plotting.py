@@ -220,6 +220,8 @@ def dual_axis_figure(
     secondary_tickformat=None,
     y1_scale_mode="auto",
     y2_scale_mode="auto",
+    keep_full_x_span=False,
+    xaxis_range=None,
 ):
     fig = go.Figure()
 
@@ -232,7 +234,8 @@ def dual_axis_figure(
     plot_df["_x"] = x_vals
     if customdata is not None:
         plot_df["_customdata"] = customdata
-    plot_df = plot_df.dropna(how="all", subset=cols)
+    if not keep_full_x_span:
+        plot_df = plot_df.dropna(how="all", subset=cols)
 
     if plot_df.empty:
         return fig
@@ -328,6 +331,8 @@ def dual_axis_figure(
         add_event_lines_plotly(fig, add_events, plant_events=plant_events)
     if rangeslider:
         fig.update_xaxes(rangeslider_visible=True)
+    if xaxis_range is not None:
+        fig.update_xaxes(range=xaxis_range)
     return fig
 
 

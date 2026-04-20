@@ -91,6 +91,32 @@ class PlottingTests(unittest.TestCase):
         self.assertEqual(fig.layout.yaxis.type, "log")
         self.assertEqual(fig.layout.yaxis2.type, "log")
 
+    def test_dual_axis_figure_can_preserve_full_x_span_with_missing_values(self):
+        index = pd.date_range("2026-01-01", periods=5, freq="D")
+        df = pd.DataFrame(
+            {
+                "left_signal": [1.0, None, None, 4.0, None],
+                "right_signal": [None, None, 3.0, None, None],
+            },
+            index=index,
+        )
+
+        fig = dual_axis_figure(
+            df,
+            "left_signal",
+            "right_signal",
+            "Left",
+            "Right",
+            "Preserve Range",
+            rangeslider=False,
+            keep_full_x_span=True,
+            xaxis_range=[index.min(), index.max()],
+        )
+
+        self.assertEqual(len(fig.data[0].x), len(index))
+        self.assertEqual(fig.layout.xaxis.range[0], index.min())
+        self.assertEqual(fig.layout.xaxis.range[1], index.max())
+
     def test_event_study_figure_contains_iqr_band_and_event_line(self):
         summary = pd.DataFrame(
             {
