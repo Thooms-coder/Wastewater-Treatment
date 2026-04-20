@@ -168,7 +168,7 @@ def render_executive_brief_page(ctx):
             y1_scale_mode=y_scale_mode.lower(),
             y2_scale_mode=y_scale_mode.lower(),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="executive_headline_chart")
 
     render_section_intro(
         "Operational Transition Summary",
@@ -283,7 +283,7 @@ def render_operations_review_page(ctx):
             y1_scale_mode=y_scale_mode.lower(),
             y2_scale_mode=y_scale_mode.lower(),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="ops_timeline_chart")
 
         render_section_intro(
             "Script-Aligned Shortcuts",
@@ -291,19 +291,19 @@ def render_operations_review_page(ctx):
         )
         shortcut_tabs = st.tabs(["NH3 and H2S", "H2S and temperature", "Load context"])
         with shortcut_tabs[0]:
-            st.plotly_chart(dual_axis_figure(master_df, NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)", "NH₃ and H₂S – Full Timeline", add_events=all_events), use_container_width=True)
+            st.plotly_chart(dual_axis_figure(master_df, NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)", "NH₃ and H₂S – Full Timeline", add_events=all_events), use_container_width=True, key="ops_shortcut_nh3_h2s_full")
             if hourly_df is not None and has_data(hourly_df, NH3) and has_data(hourly_df, H2S):
-                st.plotly_chart(dual_axis_figure(hourly_df, NH3, H2S, "NH₃ (ppm) — hourly avg", "H₂S (ppm) — hourly max", "NH₃ and H₂S – Hourly", add_events=all_events), use_container_width=True)
+                st.plotly_chart(dual_axis_figure(hourly_df, NH3, H2S, "NH₃ (ppm) — hourly avg", "H₂S (ppm) — hourly max", "NH₃ and H₂S – Hourly", add_events=all_events), use_container_width=True, key="ops_shortcut_nh3_h2s_hourly")
         with shortcut_tabs[1]:
             if has_data(master_df, H2S) and has_data(master_df, TEMP_H2S):
-                st.plotly_chart(dual_axis_figure(master_df, H2S, TEMP_H2S, "H₂S (ppm)", "Temperature (°F)", "H₂S and Temperature – Full Timeline", add_events=all_events), use_container_width=True)
+                st.plotly_chart(dual_axis_figure(master_df, H2S, TEMP_H2S, "H₂S (ppm)", "Temperature (°F)", "H₂S and Temperature – Full Timeline", add_events=all_events), use_container_width=True, key="ops_shortcut_h2s_temp")
             else:
                 st.info("H2S and temperature view is not available in the current window.")
         with shortcut_tabs[2]:
             if hourly_df is not None and "lbs_volatile" in hourly_df.columns:
                 hourly_plot = hourly_df[["lbs_volatile"]].rename(columns={"lbs_volatile": "Transferred Lbs Vol"})
                 merged = master_df[[H2S]].join(hourly_plot, how="outer")
-                st.plotly_chart(dual_axis_figure(merged, H2S, "Transferred Lbs Vol", "H₂S (ppm)", "Transferred volatile solids (lbs/hr)", "H₂S and hourly transferred volatile solids", add_events=all_events, bar_second=True), use_container_width=True)
+                st.plotly_chart(dual_axis_figure(merged, H2S, "Transferred Lbs Vol", "H₂S (ppm)", "Transferred volatile solids (lbs/hr)", "H₂S and hourly transferred volatile solids", add_events=all_events, bar_second=True), use_container_width=True, key="ops_shortcut_load_context")
             else:
                 st.info("Load-context shortcut is not available in the current window.")
 
@@ -345,6 +345,7 @@ def render_operations_review_page(ctx):
             st.plotly_chart(
                 event_window_figure(window_df, y1, y2, l1, l2, f"{signal_mode} around {event_family} {event_direction} event", bar=bar),
                 use_container_width=True,
+                key="ops_single_event_window",
             )
 
         render_section_intro(
@@ -366,6 +367,7 @@ def render_operations_review_page(ctx):
             st.plotly_chart(
                 event_study_figure(summary, f"{signal_label} Response Around {chem} {event_type}", f"{signal_label} (ppm)"),
                 use_container_width=True,
+                key="ops_repeated_event_study",
             )
             render_summary_cards(
                 [
@@ -449,6 +451,7 @@ def render_operations_review_page(ctx):
             st.plotly_chart(
                 multi_panel_figure(master_df, event_windows, y1, y2, y1_label, y2_label, f"{choice} Across Operational Transitions"),
                 use_container_width=True,
+                key="ops_transition_comparison_panels",
             )
 
 
@@ -588,6 +591,7 @@ def render_chemistry_dosing_page(ctx):
                     y2_scale_mode=y_scale_mode.lower(),
                 ),
                 use_container_width=True,
+                key="chemistry_timeline_chart",
             )
 
     with coverage_tab:
@@ -763,6 +767,7 @@ def render_performance_coverage_page(ctx):
                     y2_scale_mode=y_scale_mode.lower(),
                 ),
                 use_container_width=True,
+                key="perf_daily_chart",
             )
             with st.expander("View daily aggregate table", expanded=False):
                 st.dataframe(daily_df[cols + available_columns(daily_df, ["n_obs_nh3", "n_obs_h2s", "n_obs_water", "nh3_coverage", "h2s_coverage", "water_coverage"])], use_container_width=True, height=280)
@@ -793,7 +798,7 @@ def render_performance_coverage_page(ctx):
                 legend=dict(orientation="h"),
                 template="plotly_white",
             )
-            st.plotly_chart(monthly_fig, use_container_width=True)
+            st.plotly_chart(monthly_fig, use_container_width=True, key="perf_monthly_chart")
             with st.expander("View monthly summary table", expanded=False):
                 st.dataframe(display_monthly, use_container_width=True, height=280)
 
@@ -824,7 +829,7 @@ def render_performance_coverage_page(ctx):
                 legend=dict(orientation="h"),
                 template="plotly_white",
             )
-            st.plotly_chart(weekday_fig, use_container_width=True)
+            st.plotly_chart(weekday_fig, use_container_width=True, key="perf_weekday_chart")
             with st.expander("View weekday summary table", expanded=False):
                 st.dataframe(display_weekday, use_container_width=True, height=280)
 
@@ -853,7 +858,7 @@ def render_performance_coverage_page(ctx):
                     legend=dict(orientation="h"),
                     template="plotly_white",
                 )
-                st.plotly_chart(coverage_fig, use_container_width=True)
+                st.plotly_chart(coverage_fig, use_container_width=True, key="perf_coverage_chart")
                 with st.expander("View coverage detail table", expanded=False):
                     st.dataframe(daily_df[coverage_cols + available_columns(daily_df, ["n_obs_nh3", "n_obs_h2s", "n_obs_water"])], use_container_width=True, height=260)
 
@@ -877,11 +882,11 @@ def render_performance_coverage_page(ctx):
         color_col = st.selectbox("Color by (optional)", [None] + scatter_cols, index=0, key="perf_scatter_color")
         st.form_submit_button("Update relationship screening")
     if len(selected) >= 2:
-        st.plotly_chart(correlation_heatmap(analysis_df, selected, title="Correlation heatmap of selected metrics"), use_container_width=True)
+        st.plotly_chart(correlation_heatmap(analysis_df, selected, title="Correlation heatmap of selected metrics"), use_container_width=True, key="perf_correlation_heatmap")
     else:
         st.info("Select at least two columns for the correlation heatmap.")
     scatter_title = f"{display_label(y_col)} vs {display_label(x_col)}"
-    st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=scatter_title), use_container_width=True)
+    st.plotly_chart(scatter_with_trend(scatter_source, x_col, y_col, color_col=color_col, title=scatter_title), use_container_width=True, key="perf_scatter_trend")
 
 
 def render_diagnostics_data_page(ctx):
@@ -968,7 +973,7 @@ def render_diagnostics_data_page(ctx):
             yaxis_title=display_label(target_col),
         )
         fig.update_xaxes(rangeslider_visible=True)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="diag_anomaly_signal_chart")
 
         z_df = pd.DataFrame({target_col: master_df[target_col], "z_score": z}).dropna().tail(5000)
         z_fig = go.Figure()
@@ -976,7 +981,7 @@ def render_diagnostics_data_page(ctx):
         z_fig.add_hline(y=threshold, line_dash="dash")
         z_fig.add_hline(y=-threshold, line_dash="dash")
         z_fig.update_layout(title=f"Rolling z-score for {display_label(target_col)}", template="plotly_white", hovermode="x unified", xaxis_title="Date / time", yaxis_title="z-score")
-        st.plotly_chart(z_fig, use_container_width=True)
+        st.plotly_chart(z_fig, use_container_width=True, key="diag_anomaly_zscore_chart")
 
         with st.expander("View anomaly rows", expanded=False):
             st.dataframe(anomalies.head(500), use_container_width=True, height=280)
@@ -1032,7 +1037,7 @@ def render_diagnostics_data_page(ctx):
                 dist_col = st.selectbox("Numeric column", numeric_candidates, key="diag_dist_col")
                 hist = go.Figure(data=[go.Histogram(x=view_df[dist_col].dropna(), nbinsx=50)])
                 hist.update_layout(title=f"Distribution of {display_label(dist_col)}", template="plotly_white", xaxis_title=display_label(dist_col), yaxis_title="Count")
-                st.plotly_chart(hist, use_container_width=True)
+                st.plotly_chart(hist, use_container_width=True, key="diag_distribution_histogram")
 
 
 def render_page(page, ctx):
