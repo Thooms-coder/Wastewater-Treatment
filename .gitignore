@@ -124,6 +124,3 @@ dist/
 # !plots/.gitkeep
 
 # !figures/.gitkeep
-
-.ipynb_checkpoints/
-*.ipynb
