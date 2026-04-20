@@ -13,42 +13,60 @@ DEFAULT_LAYOUT = {
         y=1.02,
         xanchor="left",
         x=0,
-        bgcolor="rgba(255,255,255,0.72)",
-        bordercolor="rgba(24,35,31,0.08)",
+        bgcolor="rgba(255,255,255,0.54)",
+        bordercolor="rgba(255,255,255,0.48)",
         borderwidth=1,
-        font=dict(size=11),
+        font=dict(size=11, color="#20302a"),
     ),
     "paper_bgcolor": "rgba(255,255,255,0)",
-    "plot_bgcolor": "#fcfaf5",
+    "plot_bgcolor": "rgba(255,255,255,0.38)",
     "font": dict(color="#18231f", family="IBM Plex Sans, Arial, sans-serif"),
 }
 
 PRIMARY_COLOR = "#1f6a53"
 SECONDARY_COLOR = "#8b5e1a"
 TERTIARY_COLOR = "#4b645b"
-GRID_COLOR = "rgba(24,35,31,0.08)"
-EVENT_LINE_COLOR = "rgba(31,106,83,0.28)"
+GRID_COLOR = "rgba(56,76,68,0.12)"
+EVENT_LINE_COLOR = "rgba(31,106,83,0.34)"
 PLANT_EVENT_COLOR = "#8f3f2b"
 
 
 def apply_executive_axes(fig):
+    fig.update_layout(
+        title=dict(font=dict(size=20, color="#18231f"), x=0.01, xanchor="left"),
+        hoverlabel=dict(
+            bgcolor="rgba(250,247,241,0.96)",
+            bordercolor="rgba(255,255,255,0.62)",
+            font=dict(color="#18231f", size=11),
+        ),
+    )
     fig.update_xaxes(
         showgrid=True,
         gridcolor=GRID_COLOR,
         zeroline=False,
-        linecolor="rgba(24,35,31,0.18)",
+        linecolor="rgba(24,35,31,0.22)",
+        showline=True,
+        ticks="outside",
+        tickcolor="rgba(24,35,31,0.12)",
+        ticklen=5,
         tickfont=dict(size=11),
         title_font=dict(size=12),
+        showspikes=True,
+        spikethickness=1,
+        spikecolor="rgba(31,106,83,0.18)",
     )
     fig.update_yaxes(
         showgrid=True,
         gridcolor=GRID_COLOR,
         zeroline=False,
-        linecolor="rgba(24,35,31,0.18)",
+        linecolor="rgba(24,35,31,0.22)",
+        showline=True,
+        ticks="outside",
+        tickcolor="rgba(24,35,31,0.12)",
+        ticklen=5,
         tickfont=dict(size=11),
         title_font=dict(size=12),
     )
-    fig.update_layout(title=dict(font=dict(size=20, color="#18231f"), x=0.01, xanchor="left"))
     return fig
 
 
@@ -71,7 +89,9 @@ def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant
                     xanchor="left",
                     yanchor="top",
                     font=dict(size=8, color="#48665b"),
-                    bgcolor="rgba(252,250,245,0.78)",
+                    bgcolor="rgba(255,255,255,0.78)",
+                    bordercolor="rgba(255,255,255,0.48)",
+                    borderwidth=1,
                 )
 
     if not plant_events:
@@ -90,7 +110,9 @@ def add_event_lines_plotly(fig, events, yref="paper", include_labels=True, plant
                 xanchor="left",
                 yanchor="top",
                 font=dict(size=9, color=PLANT_EVENT_COLOR),
-                bgcolor="rgba(252,250,245,0.84)",
+                bgcolor="rgba(255,255,255,0.84)",
+                bordercolor="rgba(255,255,255,0.48)",
+                borderwidth=1,
             )
 
     return fig
@@ -139,7 +161,7 @@ def dual_axis_figure(
             y=plot_df[y1_col],
             mode="lines",
             name=y1_label,
-            line=dict(width=2.6, color=PRIMARY_COLOR),
+            line=dict(width=3.0, color=PRIMARY_COLOR),
             yaxis="y",
             customdata=plot_df["_customdata"] if "_customdata" in plot_df.columns else None,
             hovertemplate=y1_hover + f"{y1_label}: " + "%{y:.2f}<extra></extra>",
@@ -155,7 +177,11 @@ def dual_axis_figure(
                     y=plot_df[y2_col],
                     name=y2_label,
                     yaxis="y2",
-                    marker=dict(color="rgba(139, 94, 26, 0.55)", line=dict(color=SECONDARY_COLOR, width=0.8)),
+                    marker=dict(
+                        color="rgba(139, 94, 26, 0.52)",
+                        line=dict(color="rgba(255,255,255,0.55)", width=0.8),
+                    ),
+                    opacity=0.9,
                     hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
                 )
             )
@@ -166,7 +192,7 @@ def dual_axis_figure(
                     y=plot_df[y2_col],
                     mode="lines",
                     name=y2_label,
-                    line=dict(width=2, dash="dot", color=SECONDARY_COLOR),
+                    line=dict(width=2.4, dash="dot", color=SECONDARY_COLOR),
                     yaxis="y2",
                     hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
                 )
@@ -187,6 +213,25 @@ def dual_axis_figure(
         **DEFAULT_LAYOUT,
     )
     apply_executive_axes(fig)
+    fig.update_layout(
+        xaxis=dict(
+            title=x_title,
+            showgrid=True,
+            gridcolor=GRID_COLOR,
+        ),
+        yaxis=dict(
+            title=y1_label,
+            showgrid=True,
+            gridcolor=GRID_COLOR,
+        ),
+        yaxis2=dict(
+            title=y2_label,
+            overlaying="y",
+            side="right",
+            tickformat=secondary_tickformat,
+            showgrid=False,
+        ),
+    )
 
     if add_events:
         add_event_lines_plotly(fig, add_events, plant_events=plant_events)
@@ -227,7 +272,7 @@ def event_study_figure(summary, title, ylabel):
             y=summary["q25"],
             mode="lines",
             fill="tonexty",
-            fillcolor="rgba(31,106,83,0.18)",
+            fillcolor="rgba(31,106,83,0.16)",
             line=dict(width=0),
             name="IQR (25–75%)",
             hovertemplate="Q25: %{y:.2f}<extra></extra>",
@@ -239,7 +284,7 @@ def event_study_figure(summary, title, ylabel):
             y=summary["median"],
             mode="lines",
             name="Median",
-            line=dict(width=3, color=PRIMARY_COLOR),
+            line=dict(width=3.2, color=PRIMARY_COLOR),
             hovertemplate="Median: %{y:.2f}<br>Δmin: %{x}<extra></extra>",
         )
     )
@@ -291,6 +336,13 @@ def correlation_heatmap(df, cols, title="Correlation Heatmap"):
         xaxis_title="",
         yaxis_title="",
         **DEFAULT_LAYOUT,
+    )
+    fig.update_traces(
+        colorbar=dict(
+            thickness=14,
+            outlinecolor="rgba(255,255,255,0.45)",
+            bgcolor="rgba(255,255,255,0.28)",
+        )
     )
     fig.update_xaxes(side="bottom", tickangle=-35)
     fig.update_yaxes(autorange="reversed")
@@ -356,12 +408,23 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
     if plot_df.empty:
         return fig
 
-    marker_kwargs = dict(size=6, opacity=0.55)
+    marker_kwargs = dict(
+        size=7,
+        opacity=0.62,
+        color=PRIMARY_COLOR,
+        line=dict(color="rgba(255,255,255,0.52)", width=0.8),
+    )
     if color_col and color_col in plot_df.columns:
         marker_kwargs["color"] = plot_df[color_col]
-        marker_kwargs["colorscale"] = "Viridis"
+        marker_kwargs["colorscale"] = [
+            [0.0, "#c58f49"],
+            [0.25, "#8b5e1a"],
+            [0.5, "#6c8f83"],
+            [0.75, "#3a7b63"],
+            [1.0, "#1f6a53"],
+        ]
         marker_kwargs["showscale"] = True
-        marker_kwargs["colorbar"] = {"title": color_col}
+        marker_kwargs["colorbar"] = {"title": color_col, "thickness": 14}
 
     fig.add_trace(
         go.Scatter(
@@ -387,7 +450,7 @@ def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
                     y=slope * xs + intercept,
                     mode="lines",
                     name=f"Trend (slope={slope:.3f})",
-                    line=dict(color=SECONDARY_COLOR, width=2.5),
+                    line=dict(color=SECONDARY_COLOR, width=3),
                 )
             )
 
@@ -422,7 +485,7 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
                 y=window_df[y1],
                 mode="lines",
                 name=y1_label,
-                line=dict(width=2.4, color=PRIMARY_COLOR),
+                line=dict(width=2.8, color=PRIMARY_COLOR),
                 showlegend=(r == 1 and c == 1),
                 hovertemplate=f"{y1_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
             ),
@@ -436,7 +499,7 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
                 y=window_df[y2],
                 mode="lines",
                 name=y2_label,
-                line=dict(dash="dot", color=SECONDARY_COLOR, width=2),
+                line=dict(dash="dot", color=SECONDARY_COLOR, width=2.3),
                 showlegend=(r == 1 and c == 1),
                 hovertemplate=f"{y2_label}: " + "%{y:.2f}<br>Δmin: %{x}<extra></extra>",
             ),
@@ -451,4 +514,5 @@ def multi_panel_figure(df, events, y1, y2, y1_label, y2_label, title):
     fig.update_layout(title=title, height=800, **DEFAULT_LAYOUT)
     fig.update_xaxes(title_text="Minutes from Event", rangeslider_visible=True)
     apply_executive_axes(fig)
+    fig.update_annotations(font=dict(size=12, color="#30423b"))
     return fig

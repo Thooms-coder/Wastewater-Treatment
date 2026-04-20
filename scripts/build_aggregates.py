@@ -17,6 +17,8 @@ PROCESS_COLS = [
     "interp_flag",
     "ferric_solution_lbs_per_day",
     "ferric_active_lbs_per_day",
+    "hcl_solution_lbs_per_day",
+    "hcl_active_lbs_per_day",
 ]
 
 COVERAGE_COLS = [
@@ -79,6 +81,10 @@ def run_aggregations():
         agg_map["ferric_solution_lbs_per_day"] = "mean"
     if "ferric_active_lbs_per_day" in df.columns:
         agg_map["ferric_active_lbs_per_day"] = "mean"
+    if "hcl_solution_lbs_per_day" in df.columns:
+        agg_map["hcl_solution_lbs_per_day"] = "mean"
+    if "hcl_active_lbs_per_day" in df.columns:
+        agg_map["hcl_active_lbs_per_day"] = "mean"
 
     # Coverage / observation counts
     for col in COVERAGE_COLS:

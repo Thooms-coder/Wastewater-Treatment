@@ -82,6 +82,13 @@ FERRIC_REDUCTION_DATE = pd.Timestamp("2026-01-07")
 # If you want a simple “representative feed rate” feature when ferric is available:
 DEFAULT_FERRIC_SOLUTION_LB_PER_DAY = 583.0  # from your note/example
 
+# -------------------------------------------------------------------
+# Hydrochloric acid dosing notes (optional features)
+# -------------------------------------------------------------------
+HCL_STRENGTH_FRAC = 0.32
+HCL_SPECIFIC_GRAVITY = 1.16
+DEFAULT_HCL_SOLUTION_LB_PER_DAY = 6230.0  # from operations note/example
+
 
 # -------------------------------------------------------------------
 # Unit conversion helpers (common wastewater convention)
@@ -222,12 +229,49 @@ def add_ferric_dose_features(
     return out
 
 
+def add_hcl_dose_features(
+    df: pd.DataFrame,
+    hcl_available_col: str = "hcl_available",
+    solution_lbs_per_day: float = DEFAULT_HCL_SOLUTION_LB_PER_DAY,
+    strength_frac: float = HCL_STRENGTH_FRAC,
+) -> pd.DataFrame:
+    """
+    Add simple HCl dosing features from availability flags and a representative feed rate.
+
+    Current logic:
+    - If HCl is available, assume representative solution dosing is active.
+    - If not available, dose is 0.
+
+    This is intentionally a descriptive feature and should be replaced with measured HCl
+    feed data when those data become available.
+    """
+    out = df.copy()
+
+    if hcl_available_col not in out.columns:
+        out["hcl_solution_lbs_per_day"] = np.nan
+        out["hcl_active_lbs_per_day"] = np.nan
+        return out
+
+    avail = out[hcl_available_col].fillna(0).astype(float).clip(0, 1)
+    solution = avail * float(solution_lbs_per_day)
+
+    out["hcl_solution_lbs_per_day"] = solution
+    out["hcl_active_lbs_per_day"] = (
+        out["hcl_solution_lbs_per_day"] * float(strength_frac)
+    )
+    out["hcl_strength_frac"] = float(strength_frac)
+    out["hcl_specific_gravity"] = float(HCL_SPECIFIC_GRAVITY)
+
+    return out
+
+
 def build_chemistry_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Master function: add fixed chemistry + operational dosing features (if possible).
     """
     out = add_fixed_chemistry_features(df)
     out = add_ferric_dose_features(out)
+    out = add_hcl_dose_features(out)
     return out
 
 
@@ -261,6 +305,9 @@ if __name__ == "__main__":
         "ferric_available",
         "ferric_solution_lbs_per_day",
         "ferric_active_lbs_per_day",
+        "hcl_available",
+        "hcl_solution_lbs_per_day",
+        "hcl_active_lbs_per_day",
     ]
     cols_preview = [c for c in cols_preview if c in chem_df.columns]
 
@@ -268,7 +315,9 @@ if __name__ == "__main__":
     print("\nChemistry feature columns added:")
     added = [c for c in chem_df.columns if c.startswith("fixed_") or c in {
         "pH_fixed", "ionic_strength_M", "ferric_solution_lbs_per_day", "ferric_active_lbs_per_day",
+        "hcl_solution_lbs_per_day", "hcl_active_lbs_per_day",
         "ferric_strength_frac", "ferric_specific_gravity",
+        "hcl_strength_frac", "hcl_specific_gravity",
         "fixed_total_cations_M", "fixed_total_anions_M",
         "fixed_charge_balance_eq_per_L", "fixed_charge_balance_ratio"
     }]
