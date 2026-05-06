@@ -520,6 +520,14 @@ def render_chemistry_dosing_page(ctx):
             NH3, H2S, "total_gpm", "lbs_per_min",
             "ferric_solution_lbs_per_day", "ferric_active_lbs_per_day",
             "hcl_solution_lbs_per_day", "hcl_active_lbs_per_day",
+            "ferric_solution_lbs_per_day_measured", "ferric_active_lbs_per_day_measured",
+            "hcl_solution_lbs_per_day_measured", "hcl_active_lbs_per_day_measured",
+            "hcl_active_mg_per_L_reported", "hcl_dosage_mg_per_L_measured",
+            "bio_centrate_ph_su", "bio_centrate_alkalinity_mg_l",
+            "bio_filtrate_ph_su", "bio_filtrate_alkalinity_mg_l",
+            "bio_biosolids_centrate_ortho_p_mg_l",
+            "bio_biosolids_filtrate_ortho_p_mg_l",
+            "bio_biocake_struvite_observation_no_1650_yes_3500",
         ],
     )
     chemistry_df = master_df[chemistry_cols].copy() if chemistry_cols else pd.DataFrame(index=master_df.index)
@@ -548,8 +556,16 @@ def render_chemistry_dosing_page(ctx):
             c for c in [
                 NH3, H2S,
                 "ferric_active_mg_per_L", "hcl_active_mg_per_L",
+                "hcl_active_mg_per_L_reported",
                 "ferric_active_lbs_per_day", "hcl_active_lbs_per_day",
+                "ferric_active_lbs_per_day_measured", "hcl_active_lbs_per_day_measured",
                 "ferric_solution_lbs_per_day", "hcl_solution_lbs_per_day",
+                "ferric_solution_lbs_per_day_measured", "hcl_solution_lbs_per_day_measured",
+                "bio_centrate_ph_su", "bio_filtrate_ph_su",
+                "bio_centrate_alkalinity_mg_l", "bio_filtrate_alkalinity_mg_l",
+                "bio_biosolids_centrate_ortho_p_mg_l",
+                "bio_biosolids_filtrate_ortho_p_mg_l",
+                "bio_biocake_struvite_observation_no_1650_yes_3500",
                 "total_gpm", "lbs_per_min",
             ] if c in chemistry_df.columns
         ]
@@ -598,6 +614,8 @@ def render_chemistry_dosing_page(ctx):
                     bar_second=right_col in {
                         "ferric_solution_lbs_per_day", "ferric_active_lbs_per_day",
                         "hcl_solution_lbs_per_day", "hcl_active_lbs_per_day",
+                        "ferric_solution_lbs_per_day_measured", "ferric_active_lbs_per_day_measured",
+                        "hcl_solution_lbs_per_day_measured", "hcl_active_lbs_per_day_measured",
                     },
                     y1_scale_mode=y_scale_mode.lower(),
                     y2_scale_mode=y_scale_mode.lower(),

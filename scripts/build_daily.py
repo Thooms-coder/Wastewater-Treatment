@@ -76,6 +76,27 @@ def run_daily_aggregation():
         agg_map["hcl_active_lbs_per_day"] = "mean"
 
     # --------------------------------------------------
+    # Daily report fields
+    # These are already daily values broadcast onto the minute index by
+    # build_master, so mean reconstructs the original daily report value.
+    # Binary/indicator fields use max so any positive observation is retained.
+    # --------------------------------------------------
+    report_cols = [
+        c for c in df.columns
+        if (
+            c.startswith("chem_")
+            or c.startswith("bio_")
+            or c.endswith("_measured")
+            or c.endswith("_reported")
+            or c == "daily_report_features_available"
+        )
+        and c not in agg_map
+        and pd.api.types.is_numeric_dtype(df[c])
+    ]
+    for col in report_cols:
+        agg_map[col] = "max" if col == "daily_report_features_available" or "struvite" in col else "mean"
+
+    # --------------------------------------------------
     # Base daily aggregation
     # --------------------------------------------------
     daily = df.resample("1D").agg(agg_map)

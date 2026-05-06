@@ -1,0 +1,560 @@
+{
+  "chemical_treatment": {
+    "source_file": "/Users/mutsamungoshi/Documents/Wastewater Treatment/data/Chemical Treatment__PHIL.BENNINGTON__13588__04_29_2026__08_44.xlsx",
+    "rows": 366,
+    "columns": 31,
+    "start": "2025-03-01 00:00:00",
+    "end": "2026-03-01 00:00:00",
+    "comment_cells": 2,
+    "fields": [
+      {
+        "column": "chem_sodium_hypochlorite_used_gals_day",
+        "source_name": "Sodium Hypochlorite Used",
+        "unit": "Gals/day",
+        "source_id": "13201",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_hypochlorite_dosage_lbs_day",
+        "source_name": "Sodium Hypochlorite Dosage",
+        "unit": "Lbs/Day",
+        "source_id": "13203",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_chlorine_100percent_applied_lbs_day",
+        "source_name": "Chlorine (100%) Applied",
+        "unit": "Lbs/Day",
+        "source_id": "13205",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_chlorine_100percent_concentration_mg_l",
+        "source_name": "Chlorine (100%) Concentration",
+        "unit": "mg/L",
+        "source_id": "13207",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_chlorine_100percent_demand_mg_l",
+        "source_name": "Chlorine (100%) Demand",
+        "unit": "mg/L",
+        "source_id": "13209",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_chlorine_100percent_neutralized_ccb_pass_a_lbs_day",
+        "source_name": "Chlorine (100%) Neutralized @ CCB Pass A",
+        "unit": "Lbs/Day",
+        "source_id": "13211",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_bisulfite_39_6percent_solution_feed_gals_day",
+        "source_name": "Sodium Bisulfite 39.6% Solution Feed",
+        "unit": "Gals/day",
+        "source_id": "13213",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_bisulfite_39_6percent_solution_feed_lbs_day",
+        "source_name": "Sodium Bisulfite 39.6% Solution Feed",
+        "unit": "Lbs/Day",
+        "source_id": "13215",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_bisulfite_100percent_conc_feed_lbs_day",
+        "source_name": "Sodium Bisulfite 100% Conc Feed",
+        "unit": "Lbs/Day",
+        "source_id": "13217",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_bisulfite_100percent_dosage_mg_l",
+        "source_name": "Sodium Bisulfite 100% Dosage",
+        "unit": "mg/L",
+        "source_id": "13219",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_theor_sodium_bisulfite_100percent_overfeed_lbs_day",
+        "source_name": "Theor Sodium Bisulfite 100% Overfeed",
+        "unit": "Lbs/Day",
+        "source_id": "13223",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_sodium_bisulfite_100percent_dosage_mg_l_13219",
+        "source_name": "Sodium Bisulfite 100% Dosage",
+        "unit": "mg/L",
+        "source_id": "13219",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_theor_sodium_bisulfite_reqd_for_neutralization_lbs_day",
+        "source_name": "Theor Sodium Bisulfite Reqd for Neutralization",
+        "unit": "Lbs/Day",
+        "source_id": "13221",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_theor_sodium_bisulfite_100percent_overfeed_lbs_day_13223",
+        "source_name": "Theor Sodium Bisulfite 100% Overfeed",
+        "unit": "Lbs/Day",
+        "source_id": "13223",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_theor_sodium_bisulfite_39_6percent_overfeed_lbs_day",
+        "source_name": "Theor Sodium Bisulfite 39.6% Overfeed",
+        "unit": "Lbs/Day",
+        "source_id": "13225",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_theor_sodium_bisulfite_39_6percent_overfeed_gallons",
+        "source_name": "Theor Sodium Bisulfite 39.6% Overfeed",
+        "unit": "Gallons",
+        "source_id": "13227",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_east_aeration_effluent_mg_l",
+        "source_name": "Ferric Chloride Applied East Aeration Effluent",
+        "unit": "mg/L",
+        "source_id": "13231",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_choride_specific_gravity_fecl3",
+        "source_name": "Ferric Choride Specific gravity FeCl3",
+        "unit": null,
+        "source_id": "13133",
+        "source_area": "Chemical Inventory"
+      },
+      {
+        "column": "chem_ferric_chloride_strength_percent",
+        "source_name": "Ferric Chloride Strength",
+        "unit": "%",
+        "source_id": "13131",
+        "source_area": "Chemical Inventory"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_east_aeration_effluent_gph",
+        "source_name": "Ferric Chloride Applied East Aeration Effluent",
+        "unit": "gph",
+        "source_id": "13229",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_parshall_flume_north_flow_goes_to_east_bank_mgd",
+        "source_name": "Parshall Flume North Flow goes to East Bank",
+        "unit": "MGD",
+        "source_id": "6233",
+        "source_area": "Aeration Basins\\Aeration Summary"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_east_aeration_gals_day",
+        "source_name": "Ferric Chloride Applied East Aeration",
+        "unit": "Gals/day",
+        "source_id": "14692",
+        "source_area": "Aeration Basins\\Aeration Basins"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_west_aeration_gals_day",
+        "source_name": "Ferric Chloride Applied West Aeration",
+        "unit": "Gals/day",
+        "source_id": "14693",
+        "source_area": "Aeration Basins"
+      },
+      {
+        "column": "chem_ferric_chloride_dosage_west_aeration_effluent_gph",
+        "source_name": "Ferric Chloride Dosage West Aeration Effluent",
+        "unit": "gph",
+        "source_id": "13233",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_west_aeration_effluent_mg_l",
+        "source_name": "Ferric Chloride Applied West Aeration Effluent",
+        "unit": "mg/L",
+        "source_id": "13235",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_chloride_applied_to_twas_gals_day",
+        "source_name": "Ferric Chloride Applied to TWAS",
+        "unit": "Gals/day",
+        "source_id": "13237",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_chloride_dosage_per_digester_mg_l",
+        "source_name": "Ferric Chloride Dosage per Digester",
+        "unit": "mg/L",
+        "source_id": "13239",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_hydrochloric_acid_dosage_mg_l",
+        "source_name": "Hydrochloric Acid Dosage",
+        "unit": "mg/L",
+        "source_id": "13291",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_hydrochloric_acid_delivered_lbs",
+        "source_name": "Hydrochloric Acid Delivered",
+        "unit": "lbs",
+        "source_id": "13293",
+        "source_area": "Chemical Treatment"
+      },
+      {
+        "column": "chem_ferric_chloride_totes_applied_at_surge_tank_lbs_day",
+        "source_name": "Ferric Chloride Totes applied at Surge tank",
+        "unit": "lbs/day",
+        "source_id": "25248",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "chem_ferric_chloride_totes_applied_at_surge_tank_mg_l",
+        "source_name": "Ferric Chloride Totes Applied at Surge Tank",
+        "unit": "mg/l",
+        "source_id": "13240",
+        "source_area": "Chemical Treatment"
+      }
+    ]
+  },
+  "biosolids_dewatering": {
+    "source_file": "/Users/mutsamungoshi/Documents/Wastewater Treatment/data/Biosolids Dewatering Facility__PHIL.BENNINGTON__13588__04_29_2026__08_21.xlsx",
+    "rows": 366,
+    "columns": 42,
+    "start": "2025-03-01 00:00:00",
+    "end": "2026-03-01 00:00:00",
+    "comment_cells": 20,
+    "fields": [
+      {
+        "column": "bio_centrifuge_total_gallons_processed_gals_day",
+        "source_name": "Centrifuge Total Gallons Processed",
+        "unit": "Gals/day",
+        "source_id": "9448",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrifuge_1_gallons_processed_gals_day",
+        "source_name": "Centrifuge #1 Gallons Processed",
+        "unit": "Gals/day",
+        "source_id": "9449",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrifuge_2_gallons_processed_gals_day",
+        "source_name": "Centrifuge #2 Gallons Processed",
+        "unit": "Gals/day",
+        "source_id": "9450",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_filtrate_volume_gallons",
+        "source_name": "GBT Filtrate Volume",
+        "unit": "Gallons",
+        "source_id": "9451",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_feed_sludge_percent_total_solids_percent",
+        "source_name": "Feed Sludge % Total Solids",
+        "unit": "%",
+        "source_id": "9454",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_thickened_percent_total_solids_percent",
+        "source_name": "GBT Thickened % Total Solids",
+        "unit": "%",
+        "source_id": "9455",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_sludge_feed_total_gal_day",
+        "source_name": "GBT Sludge Feed Total",
+        "unit": "Gal/Day",
+        "source_id": "9456",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_1_sludge_feed_gals_day",
+        "source_name": "GBT #1 Sludge Feed",
+        "unit": "Gals/day",
+        "source_id": "9457",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_2_sludge_feed_gals_day",
+        "source_name": "GBT #2 Sludge Feed",
+        "unit": "Gals/day",
+        "source_id": "9458",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_thickened_sludge_specific_gravity",
+        "source_name": "GBT Thickened Sludge Specific Gravity",
+        "unit": null,
+        "source_id": "9459",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_filtrate_mass_lbs",
+        "source_name": "GBT Filtrate Mass",
+        "unit": "Lbs",
+        "source_id": "9461",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_tss_mg_l",
+        "source_name": "Centrate TSS",
+        "unit": "mg/L",
+        "source_id": "9463",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dewatered_sludge_from_gbt_to_centrifuge_gallons",
+        "source_name": "Dewatered Sludge from GBT to Centrifuge",
+        "unit": "Gallons",
+        "source_id": "9464",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dayton_bio_cake_percent_total_solids_percent",
+        "source_name": "Dayton Bio Cake % Total Solids",
+        "unit": "%",
+        "source_id": "9465",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dayton_bio_cake_percent_fixed_percent",
+        "source_name": "Dayton Bio Cake % FIXED",
+        "unit": "%",
+        "source_id": "9467",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dayton_bio_cake_percent_volatile_solids_percent",
+        "source_name": "Dayton Bio Cake % Volatile Solids",
+        "unit": "%",
+        "source_id": "9469",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dayton_bio_cake_total_p_mg_kg",
+        "source_name": "Dayton Bio Cake Total P",
+        "unit": "mg/kg",
+        "source_id": "9470",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_dayton_bio_feed_percent_total_solids_percent",
+        "source_name": "Dayton Bio Feed % Total Solids",
+        "unit": "%",
+        "source_id": "9471",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_bio_gro_sludge_dry_tons_tons",
+        "source_name": "Bio Gro Sludge Dry Tons",
+        "unit": "Tons",
+        "source_id": "9475",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_centrate_ortho_p_mg_l",
+        "source_name": "Biosolids Centrate Ortho P",
+        "unit": "mg/L",
+        "source_id": "9477",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_centrate_ortho_p_lbs_lbs",
+        "source_name": "Biosolids Centrate Ortho P Lbs",
+        "unit": "Lbs",
+        "source_id": "9478",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_filtrate_ortho_p_mg_l",
+        "source_name": "Biosolids Filtrate Ortho P",
+        "unit": "mg/L",
+        "source_id": "9479",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_filtrate_ortho_p_lbs_lbs",
+        "source_name": "Biosolids Filtrate Ortho P Lbs",
+        "unit": "Lbs",
+        "source_id": "9480",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_centrate_total_phophorus_mg_l",
+        "source_name": "Biosolids Centrate Total Phophorus",
+        "unit": "mg/L",
+        "source_id": "9481",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_centrate_total_p_lbs_lbs",
+        "source_name": "Biosolids Centrate Total P Lbs",
+        "unit": "Lbs",
+        "source_id": "9482",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_filtrate_total_phosphorus_mg_l",
+        "source_name": "Biosolids Filtrate Total Phosphorus",
+        "unit": "mg/L",
+        "source_id": "9483",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biosolids_filtrate_total_p_lbs_lbs",
+        "source_name": "Biosolids Filtrate Total P Lbs",
+        "unit": "Lbs",
+        "source_id": "9484",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_ortho_p_to_total_p_ratio_percent",
+        "source_name": "Centrate Ortho P to Total P Ratio",
+        "unit": "%",
+        "source_id": "9485",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_filtrate_ortho_p_to_total_p_ratio_percent",
+        "source_name": "Filtrate Ortho P to Total P Ratio",
+        "unit": "%",
+        "source_id": "9486",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_ph_su",
+        "source_name": "Centrate pH",
+        "unit": "su",
+        "source_id": "9487",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_alkalinity_mg_l",
+        "source_name": "Centrate Alkalinity",
+        "unit": "mg/L",
+        "source_id": "9488",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_filtrate_ph_su",
+        "source_name": "Filtrate pH",
+        "unit": "su",
+        "source_id": "9489",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_filtrate_alkalinity_mg_l",
+        "source_name": "Filtrate Alkalinity",
+        "unit": "mg/L",
+        "source_id": "9491",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_filtrate_tss_mg_l",
+        "source_name": "Filtrate TSS",
+        "unit": "mg/L",
+        "source_id": "9493",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_bio_cake_ph_su",
+        "source_name": "Bio Cake pH",
+        "unit": "SU",
+        "source_id": "9495",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_biocake_struvite_observation_no_1650_yes_3500",
+        "source_name": "Biocake Struvite Observation No=1650 YES=3500",
+        "unit": null,
+        "source_id": "25250",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrifuge_biosolids_conveyor_belt_production_gallons",
+        "source_name": "Centrifuge Biosolids Conveyor Belt Production",
+        "unit": "Gallons",
+        "source_id": "9502",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_generated_gallons",
+        "source_name": "Centrate Generated",
+        "unit": "Gallons",
+        "source_id": "9503",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_mass_lbs",
+        "source_name": "Centrate Mass",
+        "unit": "Lbs",
+        "source_id": "9504",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_centrate_percent_capture_percent",
+        "source_name": "Centrate % Capture",
+        "unit": "%",
+        "source_id": "9505",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_total_daily_gbt_filtrate_centrate_volumes_gallons",
+        "source_name": "Total Daily GBT Filtrate & Centrate Volumes",
+        "unit": "Gallons",
+        "source_id": "9506",
+        "source_area": "Biosolids Dewatering Facility"
+      },
+      {
+        "column": "bio_gbt_percent_solids_capture_percent",
+        "source_name": "GBT % Solids Capture",
+        "unit": "%",
+        "source_id": "9507",
+        "source_area": "Biosolids Dewatering Facility"
+      }
+    ]
+  },
+  "chemistry_lab_results": {
+    "rows": 351,
+    "columns": [
+      "date",
+      "sample_location",
+      "centrate_pH",
+      "centrate_alkalinity_mg_L",
+      "centrate_tss_mg_L",
+      "centrate_ortho_p_mg_L",
+      "centrate_total_p_mg_L",
+      "filtrate_pH",
+      "filtrate_alkalinity_mg_L",
+      "filtrate_tss_mg_L",
+      "filtrate_ortho_p_mg_L",
+      "filtrate_total_p_mg_L"
+    ]
+  },
+  "struvite_observations": {
+    "rows": 352,
+    "columns": [
+      "date",
+      "location",
+      "struvite_observed",
+      "observation_code",
+      "severity"
+    ]
+  }
+}

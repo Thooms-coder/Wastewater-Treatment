@@ -40,6 +40,11 @@ Outputs (columns added):
 import numpy as np
 import pandas as pd
 
+try:
+    from scripts.daily_reports import align_daily_report_features
+except Exception:  # pragma: no cover - keeps chemistry features usable without report loader dependencies
+    align_daily_report_features = None
+
 
 # -------------------------------------------------------------------
 # Fixed chemistry snapshot from your screenshot (Total C (M))
@@ -265,6 +270,57 @@ def add_hcl_dose_features(
     return out
 
 
+def add_measured_daily_report_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Join daily report features and let measured chemical dosing replace the
+    representative assumptions where report values are available.
+    """
+    out = df.copy()
+
+    if align_daily_report_features is None or not isinstance(out.index, pd.DatetimeIndex):
+        return out
+
+    reports = align_daily_report_features(out.index)
+    if reports.empty:
+        return out
+
+    out = out.join(reports, how="left")
+
+    override_pairs = {
+        "ferric_solution_lbs_per_day": "ferric_solution_lbs_per_day_measured",
+        "ferric_active_lbs_per_day": "ferric_active_lbs_per_day_measured",
+        "ferric_strength_frac": "ferric_strength_frac_measured",
+        "ferric_specific_gravity": "ferric_specific_gravity_measured",
+        "hcl_solution_lbs_per_day": "hcl_solution_lbs_per_day_measured",
+        "hcl_active_lbs_per_day": "hcl_active_lbs_per_day_measured",
+    }
+
+    for target_col, measured_col in override_pairs.items():
+        if measured_col not in out.columns:
+            continue
+
+        measured_values = out[measured_col]
+        if target_col.startswith("ferric_") and "ferric_available" in out.columns:
+            measured_values = measured_values.where(out["ferric_available"].fillna(0).astype(float) > 0, 0.0)
+        if target_col.startswith("hcl_") and "hcl_available" in out.columns:
+            measured_values = measured_values.where(out["hcl_available"].fillna(0).astype(float) > 0, 0.0)
+
+        if target_col in out.columns:
+            assumed_col = f"{target_col}_assumed"
+            if assumed_col not in out.columns:
+                out[assumed_col] = out[target_col]
+            out[target_col] = measured_values.combine_first(out[target_col])
+        else:
+            out[target_col] = measured_values
+
+    if "hcl_dosage_mg_per_L_measured" in out.columns:
+        out["hcl_active_mg_per_L_reported"] = out["hcl_dosage_mg_per_L_measured"]
+
+    out["daily_report_features_available"] = reports.notna().any(axis=1).astype(int)
+
+    return out
+
+
 def build_chemistry_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Master function: add fixed chemistry + operational dosing features (if possible).
@@ -272,6 +328,7 @@ def build_chemistry_features(df: pd.DataFrame) -> pd.DataFrame:
     out = add_fixed_chemistry_features(df)
     out = add_ferric_dose_features(out)
     out = add_hcl_dose_features(out)
+    out = add_measured_daily_report_features(out)
     return out
 
 

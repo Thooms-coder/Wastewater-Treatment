@@ -13,6 +13,7 @@ from scripts.preprocess import preprocess_data
 from scripts.features import build_features
 from scripts.events import add_event_flags
 from scripts.chemistry_features import build_chemistry_features
+from scripts.daily_reports import write_daily_report_outputs
 from config import PROCESSED_DATA_DIR
 
 def build_hourly_table(df):
@@ -170,6 +171,10 @@ def build_master_table():
 if __name__ == "__main__":
     
     print("[build_master] Starting master dataset build…")
+
+    report_meta = write_daily_report_outputs()
+    if report_meta:
+        print(f"[build_master] Refreshed daily report outputs: {', '.join(report_meta.keys())}")
 
     master, meta = build_master_table()
 

@@ -1,10 +1,10 @@
 {
   "source": "master_1min.parquet",
   "output": "modeling_table.parquet",
-  "n_rows": 238980,
-  "n_columns": 132,
+  "n_rows": 351300,
+  "n_columns": 224,
   "start": "2025-08-14 01:00:00",
-  "end": "2026-01-26 23:59:00",
+  "end": "2026-04-14 23:59:00",
   "target_horizons_min": [
     15,
     60,
@@ -15,9 +15,9 @@
     "h2s": 1.0
   },
   "split_counts": {
-    "test": 35847,
-    "train": 167286,
-    "validation": 35847
+    "test": 52695,
+    "train": 245909,
+    "validation": 52696
   },
   "valid_rows_by_horizon": {
     "15": 37492,

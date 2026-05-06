@@ -1353,9 +1353,20 @@ def build_chemistry_review_table(df):
             "workflow_element": "Ferric reduction date",
             "status": "Available",
             "current_value": str(FERRIC_REDUCTION_DATE.date()),
-            "notes": "Used in ferric dose feature logic to halve representative dosing after the plant change.",
+            "notes": "Used only as fallback context when measured daily report dosing is unavailable.",
         },
     ]
+
+    if df is not None and "daily_report_features_available" in df.columns:
+        available_rows = int(df["daily_report_features_available"].fillna(0).sum())
+        rows.append(
+            {
+                "workflow_element": "Daily chemical/dewatering reports",
+                "status": "Available" if available_rows else "Missing in current window",
+                "current_value": f"{available_rows:,} minute rows aligned" if available_rows else "NA",
+                "notes": "Measured daily report values are joined by date and override representative dose assumptions where present.",
+            }
+        )
 
     if df is not None and "ferric_solution_lbs_per_day" in df.columns:
         sol = df["ferric_solution_lbs_per_day"].dropna()
@@ -1364,7 +1375,7 @@ def build_chemistry_review_table(df):
                 "workflow_element": "Ferric solution feed context",
                 "status": "Available as secondary context" if not sol.empty else "Missing in current window",
                 "current_value": f"{sol.median():.1f} lb/day median" if not sol.empty else "NA",
-                "notes": "Bulk feed-rate context derived from ferric availability assumptions and reduction date logic. Use the mg/L dose-intensity row below for flow-normalized interpretation.",
+                "notes": "Bulk feed-rate context. Measured daily report values are used when available; representative assumptions remain as fallback.",
             }
         )
 
@@ -1375,7 +1386,7 @@ def build_chemistry_review_table(df):
                 "workflow_element": "HCl solution feed context",
                 "status": "Available as secondary context" if not sol.empty else "Missing in current window",
                 "current_value": f"{sol.median():.1f} lb/day median" if not sol.empty else "NA",
-                "notes": "Bulk acid feed-rate context derived from HCl availability assumptions. Use the mg/L dose-intensity row below for concentration-based interpretation.",
+                "notes": "Bulk acid feed-rate context. Measured daily report values are used when available; representative assumptions remain as fallback.",
             }
         )
 

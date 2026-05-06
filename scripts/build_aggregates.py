@@ -86,6 +86,22 @@ def run_aggregations():
     if "hcl_active_lbs_per_day" in df.columns:
         agg_map["hcl_active_lbs_per_day"] = "mean"
 
+    # Daily report fields propagated from master_daily.
+    report_cols = [
+        c for c in df.columns
+        if (
+            c.startswith("chem_")
+            or c.startswith("bio_")
+            or c.endswith("_measured")
+            or c.endswith("_reported")
+            or c == "daily_report_features_available"
+        )
+        and c not in agg_map
+        and pd.api.types.is_numeric_dtype(df[c])
+    ]
+    for col in report_cols:
+        agg_map[col] = "mean"
+
     # Coverage / observation counts
     for col in COVERAGE_COLS:
         if col in df.columns:
