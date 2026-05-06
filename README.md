@@ -210,6 +210,14 @@ Run all tests:
 python -m unittest discover -s tests -v
 ```
 
+Browser smoke tests use Playwright. After installing requirements, install the Chromium browser once:
+
+```bash
+python -m playwright install chromium
+```
+
+Then the same unittest command will include the Playwright browser test. If Playwright or Chromium is not installed, that test skips cleanly.
+
 Current test coverage includes:
 
 - app state filtering and recomputation
@@ -218,6 +226,7 @@ Current test coverage includes:
 - fixture-driven processed-data loading
 - end-to-end daily and aggregate build outputs
 - page-renderer smoke coverage without browser automation
+- Playwright browser smoke coverage for the Streamlit app pages
 
 ## Current Status
 

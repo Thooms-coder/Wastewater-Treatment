@@ -242,8 +242,10 @@ def dual_axis_figure(
         return fig
 
     x_vals = df.index if x_col is None else df[x_col]
-    cols = [c for c in [y1_col, y2_col] if c in df.columns]
+    cols = list(dict.fromkeys(c for c in [y1_col, y2_col] if c in df.columns))
     plot_df = df[cols].copy()
+    if plot_df.columns.duplicated().any():
+        plot_df = plot_df.loc[:, ~plot_df.columns.duplicated(keep="first")]
     plot_df["_x"] = x_vals
     if customdata is not None:
         plot_df["_customdata"] = customdata

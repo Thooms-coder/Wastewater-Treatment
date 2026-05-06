@@ -39,6 +39,24 @@ class PlottingTests(unittest.TestCase):
         self.assertEqual(fig.data[1].name, "Right")
         self.assertGreaterEqual(len(fig.layout.shapes), 1)
 
+    def test_dual_axis_figure_handles_same_column_for_both_axes(self):
+        index = pd.date_range("2026-01-01", periods=4, freq="h")
+        df = pd.DataFrame({"signal": [1.0, 2.0, 3.0, 4.0]}, index=index)
+
+        fig = dual_axis_figure(
+            df,
+            "signal",
+            "signal",
+            "Signal",
+            "Signal",
+            "Same Column",
+            rangeslider=False,
+        )
+
+        self.assertEqual(len(fig.data), 2)
+        self.assertEqual(fig.data[0].name, "Signal")
+        self.assertEqual(fig.data[1].name, "Signal")
+
     def test_dual_axis_figure_focused_scaling_sets_trimmed_ranges(self):
         index = pd.date_range("2026-01-01", periods=6, freq="h")
         df = pd.DataFrame(

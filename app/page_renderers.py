@@ -532,9 +532,11 @@ def render_chemistry_dosing_page(ctx):
     )
     chemistry_df = master_df[chemistry_cols].copy() if chemistry_cols else pd.DataFrame(index=master_df.index)
     if not ferric_mgl.empty:
-        chemistry_df = chemistry_df.join(ferric_mgl, how="left")
+        chemistry_df[ferric_mgl.name] = ferric_mgl
     if not hcl_mgl.empty:
-        chemistry_df = chemistry_df.join(hcl_mgl, how="left")
+        chemistry_df[hcl_mgl.name] = hcl_mgl
+    if chemistry_df.columns.duplicated().any():
+        chemistry_df = chemistry_df.loc[:, ~chemistry_df.columns.duplicated(keep="first")]
 
     overview_tab, coverage_tab, inputs_tab = st.tabs(["Dose overview", "Research coverage", "Optional inputs"])
 
