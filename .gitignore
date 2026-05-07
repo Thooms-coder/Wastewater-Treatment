@@ -55,7 +55,8 @@ archive/
 
 # ==================================================
 
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
 .streamlit/secrets.toml
 
 # ==================================================
