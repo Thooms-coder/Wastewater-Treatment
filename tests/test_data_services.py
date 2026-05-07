@@ -175,6 +175,27 @@ class DataServicesTests(unittest.TestCase):
         self.assertIn(0, summary.index)
         self.assertTrue(pretrend_ok)
 
+    def test_compute_event_study_summary_drops_all_empty_relative_rows(self):
+        index = pd.date_range("2026-01-01 00:00", periods=240, freq="h")
+        ferric = [0] * len(index)
+        ferric[80:] = [1] * (len(index) - 80)
+        signal = [10.0] * len(index)
+        signal[81] = None
+        df = pd.DataFrame(
+            {
+                "ferric_available": ferric,
+                "hcl_available": [0] * len(index),
+                NH3: signal,
+            },
+            index=index,
+        )
+
+        summary, aligned_df, pretrend_ok = compute_event_study_summary(df, "Ferric", "ON", NH3)
+
+        self.assertFalse(aligned_df.empty)
+        self.assertNotIn(60, summary.index)
+        self.assertTrue(pretrend_ok)
+
 
 if __name__ == "__main__":
     unittest.main()

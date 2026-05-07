@@ -92,6 +92,10 @@ def extract_event_window(df, event_time, column, window_minutes):
 
 
 def summarize_event(aligned_df):
+    aligned_df = aligned_df.dropna(how="all")
+    if aligned_df.empty:
+        return pd.DataFrame(columns=["median", "q25", "q75"])
+
     return pd.DataFrame(
         {
             "median": aligned_df.median(axis=1),
