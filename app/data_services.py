@@ -43,13 +43,75 @@ from scripts.plotting import (
     scatter_with_trend as shared_scatter_with_trend,
 )
 
+APP_MASTER_COLUMNS = [
+    NH3,
+    H2S,
+    "nh3_nh3_ppm",
+    "h2s_h2s_ppm",
+    TEMP_NH3,
+    TEMP_H2S,
+    FLOW,
+    WEST_GPM,
+    EAST_GPM,
+    DIG_GPM,
+    "ferric_available",
+    "hcl_available",
+    "ferric_solution_lbs_per_day",
+    "ferric_active_lbs_per_day",
+    "hcl_solution_lbs_per_day",
+    "hcl_active_lbs_per_day",
+    "ferric_solution_lbs_per_day_measured",
+    "ferric_active_lbs_per_day_measured",
+    "hcl_solution_lbs_per_day_measured",
+    "hcl_active_lbs_per_day_measured",
+    "hcl_active_mg_per_L_reported",
+    "hcl_dosage_mg_per_L_measured",
+    "daily_report_features_available",
+    "bio_centrate_ph_su",
+    "bio_centrate_alkalinity_mg_l",
+    "bio_filtrate_ph_su",
+    "bio_filtrate_alkalinity_mg_l",
+    "bio_biosolids_centrate_ortho_p_mg_l",
+    "bio_biosolids_filtrate_ortho_p_mg_l",
+    "bio_biocake_struvite_observation_no_1650_yes_3500",
+]
+
+
+def _existing_parquet_columns(path: Path):
+    try:
+        import pyarrow.parquet as pq
+
+        return set(pq.ParquetFile(path).schema.names)
+    except Exception:
+        return None
+
+
+def _downcast_numeric_frame(df):
+    if df is None or df.empty:
+        return df
+
+    df = df.copy()
+    for col in df.columns:
+        if pd.api.types.is_float_dtype(df[col]):
+            df[col] = pd.to_numeric(df[col], downcast="float")
+        elif pd.api.types.is_integer_dtype(df[col]):
+            df[col] = pd.to_numeric(df[col], downcast="integer")
+    return df
+
 
 @st.cache_data(show_spinner=False)
-def safe_read_parquet(path: Path):
+def safe_read_parquet(path: Path, columns=None, downcast_numeric=False):
     if path.exists():
-        df = pd.read_parquet(path)
+        read_columns = columns
+        if columns is not None:
+            existing_columns = _existing_parquet_columns(path)
+            if existing_columns is not None:
+                read_columns = [col for col in columns if col in existing_columns]
+        df = pd.read_parquet(path, columns=read_columns)
         if isinstance(df.index, pd.DatetimeIndex):
             df = df.sort_index()
+        if downcast_numeric:
+            df = _downcast_numeric_frame(df)
         return df
     return None
 
@@ -73,11 +135,11 @@ def safe_read_csv_dates(path: Path):
 
 @st.cache_data(show_spinner=False)
 def load_all_frames(master_1min, master_1h, master_daily, monthly_path, weekday_path, event_metrics_path, struvite_obs_path, chem_labs_path):
-    master = safe_read_parquet(master_1min)
-    hourly = safe_read_parquet(master_1h)
-    daily = safe_read_parquet(master_daily)
-    monthly = safe_read_parquet(monthly_path)
-    weekday = safe_read_parquet(weekday_path)
+    master = safe_read_parquet(master_1min, columns=APP_MASTER_COLUMNS, downcast_numeric=True)
+    hourly = safe_read_parquet(master_1h, downcast_numeric=True)
+    daily = safe_read_parquet(master_daily, downcast_numeric=True)
+    monthly = safe_read_parquet(monthly_path, downcast_numeric=True)
+    weekday = safe_read_parquet(weekday_path, downcast_numeric=True)
     event_metrics = safe_read_csv(event_metrics_path)
 
     if master is not None and not isinstance(master.index, pd.DatetimeIndex):
