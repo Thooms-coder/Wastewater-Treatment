@@ -176,14 +176,20 @@ def aggregate_event_metrics(
 
     df = pd.DataFrame(metrics_list)
 
+    def median_or_nan(column):
+        values = df[column].dropna()
+        if values.empty:
+            return np.nan
+        return values.median()
+
     return {
-        "baseline": df["baseline"].median(),
-        post_label: df[post_label].median(),
-        "delta": df["delta"].median(),
-        "percent_change": df["percent_change"].median(),
-        time_to_min_label: df[time_to_min_label].median(),
-        persistence_label: df[persistence_label].median(),
-        "post_iqr": df["post_iqr"].median(),
+        "baseline": median_or_nan("baseline"),
+        post_label: median_or_nan(post_label),
+        "delta": median_or_nan("delta"),
+        "percent_change": median_or_nan("percent_change"),
+        time_to_min_label: median_or_nan(time_to_min_label),
+        persistence_label: median_or_nan(persistence_label),
+        "post_iqr": median_or_nan("post_iqr"),
         "n_events": len(df),
     }
 

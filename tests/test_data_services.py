@@ -154,6 +154,30 @@ class DataServicesTests(unittest.TestCase):
         self.assertEqual(ferric_on_nh3["delta"], -5.0)
         self.assertEqual(ferric_on_nh3["n_events"], 1)
 
+    def test_compute_event_metrics_table_handles_all_nan_percent_change(self):
+        index = pd.date_range("2026-01-01 00:00", periods=220, freq="h")
+        ferric = [0] * len(index)
+        ferric[72:] = [1] * (len(index) - 72)
+        df = pd.DataFrame(
+            {
+                "ferric_available": ferric,
+                "hcl_available": [0] * len(index),
+                NH3: [0.0] * len(index),
+                H2S: [0.0] * len(index),
+            },
+            index=index,
+        )
+
+        result = compute_event_metrics_table(df)
+        ferric_on_nh3 = result[
+            (result["chemical"] == "Ferric")
+            & (result["event_type"] == "ON")
+            & (result["signal"] == "NH3")
+        ].iloc[0]
+
+        self.assertTrue(pd.isna(ferric_on_nh3["percent_change"]))
+        self.assertEqual(ferric_on_nh3["n_events"], 1)
+
     def test_compute_event_study_summary_returns_aligned_windows(self):
         index = pd.date_range("2026-01-01 00:00", periods=240, freq="h")
         ferric = [0] * len(index)
