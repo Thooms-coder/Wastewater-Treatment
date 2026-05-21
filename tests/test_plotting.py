@@ -109,6 +109,59 @@ class PlottingTests(unittest.TestCase):
         self.assertEqual(fig.layout.yaxis.type, "log")
         self.assertEqual(fig.layout.yaxis2.type, "log")
 
+    def test_dual_axis_figure_can_put_both_traces_on_shared_y_axis(self):
+        index = pd.date_range("2026-01-01", periods=4, freq="h")
+        df = pd.DataFrame(
+            {
+                "left_signal": [10.0, 11.0, 12.0, 13.0],
+                "right_signal": [100.0, 110.0, 120.0, 130.0],
+            },
+            index=index,
+        )
+
+        fig = dual_axis_figure(
+            df,
+            "left_signal",
+            "right_signal",
+            "Ferric dose intensity (mg/L)",
+            "HCl dose intensity (mg/L)",
+            "Shared Axis",
+            rangeslider=False,
+            shared_y_axis=True,
+        )
+
+        self.assertEqual(fig.data[0].yaxis, "y")
+        self.assertEqual(fig.data[1].yaxis, "y")
+        self.assertFalse(fig.layout.yaxis2.visible)
+
+    def test_dual_axis_figure_can_stack_traces_with_independent_y_axes(self):
+        index = pd.date_range("2026-01-01", periods=4, freq="h")
+        df = pd.DataFrame(
+            {
+                "left_signal": [10.0, 11.0, 12.0, 13.0],
+                "right_signal": [1000.0, 1100.0, 1200.0, 1300.0],
+            },
+            index=index,
+        )
+
+        fig = dual_axis_figure(
+            df,
+            "left_signal",
+            "right_signal",
+            "Ferric dose intensity (mg/L)",
+            "HCl dose intensity (mg/L)",
+            "Stacked Chemistry",
+            rangeslider=False,
+            stacked_y_axes=True,
+        )
+
+        self.assertEqual(len(fig.data), 2)
+        self.assertEqual(fig.data[0].yaxis, "y")
+        self.assertEqual(fig.data[1].yaxis, "y2")
+        self.assertEqual(fig.layout.yaxis.title.text, "Ferric dose intensity (mg/L)")
+        self.assertEqual(fig.layout.yaxis2.title.text, "HCl dose intensity (mg/L)")
+        self.assertNotEqual(fig.layout.yaxis.domain, fig.layout.yaxis2.domain)
+
     def test_dual_axis_figure_can_preserve_full_x_span_with_missing_values(self):
         index = pd.date_range("2026-01-01", periods=5, freq="D")
         df = pd.DataFrame(

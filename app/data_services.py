@@ -444,6 +444,8 @@ def dual_axis_figure(
     y2_scale_mode="auto",
     keep_full_x_span=False,
     xaxis_range=None,
+    shared_y_axis=False,
+    stacked_y_axes=False,
 ):
     kwargs = dict(
         add_events=add_events,
@@ -462,10 +464,41 @@ def dual_axis_figure(
             y2_scale_mode=y2_scale_mode,
             keep_full_x_span=keep_full_x_span,
             xaxis_range=xaxis_range,
+            shared_y_axis=shared_y_axis,
+            stacked_y_axes=stacked_y_axes,
             **kwargs,
         )
     except TypeError as exc:
         msg = str(exc)
+        if "stacked_y_axes" in msg:
+            return shared_dual_axis_figure(
+                df,
+                y1_col,
+                y2_col,
+                y1_label,
+                y2_label,
+                title,
+                y1_scale_mode=y1_scale_mode,
+                y2_scale_mode=y2_scale_mode,
+                keep_full_x_span=keep_full_x_span,
+                xaxis_range=xaxis_range,
+                shared_y_axis=shared_y_axis,
+                **kwargs,
+            )
+        if "shared_y_axis" in msg:
+            return shared_dual_axis_figure(
+                df,
+                y1_col,
+                y2_col,
+                y1_label,
+                y2_label,
+                title,
+                y1_scale_mode=y1_scale_mode,
+                y2_scale_mode=y2_scale_mode,
+                keep_full_x_span=keep_full_x_span,
+                xaxis_range=xaxis_range,
+                **kwargs,
+            )
         if "y1_scale_mode" in msg or "y2_scale_mode" in msg:
             try:
                 return shared_dual_axis_figure(

@@ -17,6 +17,7 @@ def display_label(column_name):
     text = str(column_name).replace("_", " ").strip()
     return text.title() if text else str(column_name)
 
+
 from app.dashboard_ui import (
     build_chemistry_review_table,
     build_methods_log_template_df,
@@ -621,6 +622,7 @@ def render_chemistry_dosing_page(ctx):
                     },
                     y1_scale_mode=y_scale_mode.lower(),
                     y2_scale_mode=y_scale_mode.lower(),
+                    stacked_y_axes=True,
                 ),
                 use_container_width=True,
                 key="chemistry_timeline_chart",

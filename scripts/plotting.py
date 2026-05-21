@@ -235,8 +235,20 @@ def dual_axis_figure(
     y2_scale_mode="auto",
     keep_full_x_span=False,
     xaxis_range=None,
+    shared_y_axis=False,
+    stacked_y_axes=False,
 ):
-    fig = go.Figure()
+    if stacked_y_axes:
+        fig = make_subplots(
+            rows=2,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.08,
+            row_heights=[0.5, 0.5],
+        )
+        shared_y_axis = False
+    else:
+        fig = go.Figure()
 
     if not has_data(df, y1_col):
         return fig
@@ -256,19 +268,82 @@ def dual_axis_figure(
         return fig
 
     y1_hover = y1_hover_prefix or "Time: %{x}<br>"
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df["_x"],
-            y=plot_df[y1_col],
-            mode="lines",
-            name=y1_label,
-            line=dict(width=3.0, color=PRIMARY_COLOR),
-            yaxis="y",
-            customdata=plot_df["_customdata"] if "_customdata" in plot_df.columns else None,
-            hovertemplate=y1_hover + f"{y1_label}: " + "%{y:.2f}<extra></extra>",
-        )
+    y1_trace = go.Scatter(
+        x=plot_df["_x"],
+        y=plot_df[y1_col],
+        mode="lines",
+        name=y1_label,
+        line=dict(width=3.0, color=PRIMARY_COLOR),
+        yaxis="y",
+        customdata=plot_df["_customdata"] if "_customdata" in plot_df.columns else None,
+        hovertemplate=y1_hover + f"{y1_label}: " + "%{y:.2f}<extra></extra>",
     )
+    if stacked_y_axes:
+        fig.add_trace(y1_trace, row=1, col=1)
+    else:
+        fig.add_trace(y1_trace)
 
+    y2_trace = None
+    if stacked_y_axes and y2_col in plot_df.columns:
+        y2_hover = y2_hover_prefix or "Time: %{x}<br>"
+        if bar_second:
+            y2_trace = go.Bar(
+                x=plot_df["_x"],
+                y=plot_df[y2_col],
+                name=y2_label,
+                yaxis="y2",
+                marker=dict(
+                    color="rgba(139, 94, 26, 0.52)",
+                    line=dict(color="rgba(255,255,255,0.55)", width=0.8),
+                ),
+                opacity=0.9,
+                hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
+            )
+        else:
+            y2_trace = go.Scatter(
+                x=plot_df["_x"],
+                y=plot_df[y2_col],
+                mode="lines",
+                name=y2_label,
+                line=dict(width=2.4, dash="dot", color=SECONDARY_COLOR),
+                yaxis="y2",
+                hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
+            )
+        fig.add_trace(y2_trace, row=2, col=1)
+
+    if stacked_y_axes:
+        fig.update_layout(
+            title=title,
+            xaxis2=dict(title=x_title),
+            yaxis=dict(title=y1_label),
+            yaxis2=dict(title=y2_label),
+            barmode="overlay" if bar_second else None,
+            margin=margin or dict(l=100, r=100, t=100, b=100),
+            **DEFAULT_LAYOUT,
+        )
+        apply_executive_axes(fig)
+        fig.update_xaxes(title_text="", row=1, col=1)
+        fig.update_xaxes(title_text=x_title, row=2, col=1)
+        fig.update_yaxes(title_text=y1_label, row=1, col=1)
+        fig.update_yaxes(title_text=y2_label, row=2, col=1)
+
+        y1_settings = axis_scale_settings(plot_df[y1_col], y1_scale_mode)
+        if y1_settings:
+            fig.update_yaxes(**y1_settings, row=1, col=1)
+        if y2_col in plot_df.columns:
+            y2_settings = axis_scale_settings(plot_df[y2_col], y2_scale_mode)
+            if y2_settings:
+                fig.update_yaxes(**y2_settings, row=2, col=1)
+
+        if add_events:
+            add_event_lines_plotly(fig, add_events, plant_events=plant_events)
+        if rangeslider:
+            fig.update_xaxes(rangeslider_visible=True, row=2, col=1)
+        if xaxis_range is not None:
+            fig.update_xaxes(range=xaxis_range)
+        return fig
+
+    y2_axis = "y" if shared_y_axis else "y2"
     if y2_col in plot_df.columns:
         y2_hover = y2_hover_prefix or "Time: %{x}<br>"
         if bar_second:
@@ -277,7 +352,7 @@ def dual_axis_figure(
                     x=plot_df["_x"],
                     y=plot_df[y2_col],
                     name=y2_label,
-                    yaxis="y2",
+                    yaxis=y2_axis,
                     marker=dict(
                         color="rgba(139, 94, 26, 0.52)",
                         line=dict(color="rgba(255,255,255,0.55)", width=0.8),
@@ -294,21 +369,28 @@ def dual_axis_figure(
                     mode="lines",
                     name=y2_label,
                     line=dict(width=2.4, dash="dot", color=SECONDARY_COLOR),
-                    yaxis="y2",
+                    yaxis=y2_axis,
                     hovertemplate=y2_hover + f"{y2_label}: " + "%{y:.2f}<extra></extra>",
                 )
             )
 
-    fig.update_layout(
-        title=title,
-        xaxis=dict(title=x_title),
-        yaxis=dict(title=y1_label),
-        yaxis2=dict(
+    yaxis_title = y1_label
+    if shared_y_axis and y2_col in plot_df.columns and y2_label != y1_label:
+        yaxis_title = f"{y1_label} / {y2_label}"
+    yaxis2_layout = None
+    if not shared_y_axis:
+        yaxis2_layout = dict(
             title=y2_label,
             overlaying="y",
             side="right",
             tickformat=secondary_tickformat,
-        ),
+        )
+
+    fig.update_layout(
+        title=title,
+        xaxis=dict(title=x_title),
+        yaxis=dict(title=yaxis_title),
+        yaxis2=yaxis2_layout,
         barmode="overlay" if bar_second else None,
         margin=margin or dict(l=100, r=100, t=100, b=100),
         **DEFAULT_LAYOUT,
@@ -321,23 +403,31 @@ def dual_axis_figure(
             gridcolor=GRID_COLOR,
         ),
         yaxis=dict(
-            title=y1_label,
+            title=yaxis_title,
             showgrid=True,
             gridcolor=GRID_COLOR,
         ),
-        yaxis2=dict(
-            title=y2_label,
-            overlaying="y",
-            side="right",
-            tickformat=secondary_tickformat,
-            showgrid=False,
-        ),
     )
+    if not shared_y_axis:
+        fig.update_layout(
+            yaxis2=dict(
+                title=y2_label,
+                overlaying="y",
+                side="right",
+                tickformat=secondary_tickformat,
+                showgrid=False,
+            ),
+        )
+    else:
+        fig.update_layout(yaxis2=dict(visible=False, showgrid=False))
 
-    y1_settings = axis_scale_settings(plot_df[y1_col], y1_scale_mode)
+    y1_scale_source = plot_df[y1_col]
+    if shared_y_axis and y2_col in plot_df.columns:
+        y1_scale_source = pd.concat([plot_df[y1_col], plot_df[y2_col]], ignore_index=True)
+    y1_settings = axis_scale_settings(y1_scale_source, y1_scale_mode)
     if y1_settings:
         fig.update_layout(yaxis={**fig.layout.yaxis.to_plotly_json(), **y1_settings})
-    if y2_col in plot_df.columns:
+    if y2_col in plot_df.columns and not shared_y_axis:
         y2_settings = axis_scale_settings(plot_df[y2_col], y2_scale_mode)
         if y2_settings:
             fig.update_layout(yaxis2={**fig.layout.yaxis2.to_plotly_json(), **y2_settings})
