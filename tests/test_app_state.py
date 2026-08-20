@@ -56,7 +56,10 @@ class AppStateTests(unittest.TestCase):
                 pd.DataFrame({"summary": [len(daily_df)]}),
             )
 
-        def compute_event_metrics_table(df):
+        captured = {}
+
+        def compute_event_metrics_table(df, event_window=None):
+            captured["event_window"] = event_window
             return pd.DataFrame({"rows_seen": [len(df)]})
 
         filtered = build_filtered_state(
@@ -72,7 +75,10 @@ class AppStateTests(unittest.TestCase):
         self.assertEqual(list(filtered["events_table"]["timestamp"]), [minute_index[1]])
         self.assertEqual(filtered["all_events"]["Ferric_ON"], [minute_index[1]])
         self.assertEqual(filtered["all_events"]["HCl_OFF"], [])
-        self.assertEqual(filtered["event_metrics_df"].iloc[0]["rows_seen"], 3)
+        # Event metrics are now computed on the FULL record (6 rows), with the
+        # selected window passed through so only in-window events are used.
+        self.assertEqual(filtered["event_metrics_df"].iloc[0]["rows_seen"], 6)
+        self.assertEqual(captured["event_window"], (minute_index[1], minute_index[3]))
         self.assertEqual(filtered["monthly_df"].iloc[0]["summary"], 0)
         self.assertEqual(filtered["weekday_df"].iloc[0]["summary"], 0)
 
@@ -97,7 +103,7 @@ class AppStateTests(unittest.TestCase):
             window_state,
             lambda df, start_ts, end_ts: df,
             lambda daily_df: (pd.DataFrame(), pd.DataFrame()),
-            lambda df: pd.DataFrame(),
+            lambda df, event_window=None: pd.DataFrame(),
         )
 
         self.assertEqual(filtered["struvite_obs_df"].iloc[0]["note"], "scale")

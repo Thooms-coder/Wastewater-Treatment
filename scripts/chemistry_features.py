@@ -299,11 +299,13 @@ def add_measured_daily_report_features(df: pd.DataFrame) -> pd.DataFrame:
         if measured_col not in out.columns:
             continue
 
+        # Use the measured value wherever the daily report provides one, and fall
+        # back to the assumed value otherwise. We deliberately do NOT gate the
+        # measured value by the coarse availability flag: doing so coerced NaN to
+        # 0.0 (defeating the fall-back), zeroed physical constants such as
+        # strength fraction during outages, and diluted the reported daily dose
+        # on partial-availability days.
         measured_values = out[measured_col]
-        if target_col.startswith("ferric_") and "ferric_available" in out.columns:
-            measured_values = measured_values.where(out["ferric_available"].fillna(0).astype(float) > 0, 0.0)
-        if target_col.startswith("hcl_") and "hcl_available" in out.columns:
-            measured_values = measured_values.where(out["hcl_available"].fillna(0).astype(float) > 0, 0.0)
 
         if target_col in out.columns:
             assumed_col = f"{target_col}_assumed"

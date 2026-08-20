@@ -604,7 +604,13 @@ def heatmap_matrix(matrix, title=""):
 
 
 def scatter_with_trend(df, x_col, y_col, color_col=None, title=""):
-    plot_df = df[[c for c in [x_col, y_col, color_col] if c and c in df.columns]].dropna().copy()
+    # De-duplicate the selected columns (x_col == y_col, or color_col matching
+    # one of them) so column selection returns Series, not a multi-column frame.
+    cols = []
+    for c in [x_col, y_col, color_col]:
+        if c and c in df.columns and c not in cols:
+            cols.append(c)
+    plot_df = df[cols].dropna().copy()
     fig = go.Figure()
     if plot_df.empty:
         return fig

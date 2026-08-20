@@ -49,13 +49,35 @@ class DataServicesTests(unittest.TestCase):
         self.assertIn("h2s_monthly_mean", monthly.columns)
         self.assertIn("total_gpm_monthly_mean", monthly.columns)
         self.assertIn("transferred_lbs_vol_monthly_mean", monthly.columns)
-        self.assertEqual(monthly.loc[1, "nh3_monthly_mean"], 12.0)
-        self.assertEqual(monthly.loc[2, "h2s_monthly_mean"], 6.0)
-        self.assertEqual(monthly.loc[1, "days_in_data"], 2)
+        # Month keys are year-aware ("YYYY-MM") so the same calendar month in
+        # different years is not conflated.
+        self.assertEqual(monthly.loc["2026-01", "nh3_monthly_mean"], 12.0)
+        self.assertEqual(monthly.loc["2026-02", "h2s_monthly_mean"], 6.0)
+        self.assertEqual(monthly.loc["2026-01", "days_in_data"], 2)
 
         self.assertIn("nh3_weekday_mean", weekday.columns)
         self.assertIn("weekday_name", weekday.columns)
         self.assertTrue({"Monday", "Tuesday"}.issubset(set(weekday["weekday_name"])))
+
+    def test_build_period_summaries_does_not_conflate_same_month_across_years(self):
+        # Same calendar month (August) in two different years must produce two
+        # separate rows, not a single averaged-together row.
+        index = pd.to_datetime(["2025-08-10", "2025-08-11", "2026-08-10", "2026-08-11"])
+        daily = pd.DataFrame(
+            {
+                NH3: [10.0, 10.0, 20.0, 20.0],
+                H2S: [1.0, 1.0, 5.0, 5.0],
+            },
+            index=index,
+        )
+
+        monthly, _ = build_period_summaries(daily)
+
+        self.assertIn("2025-08", monthly.index)
+        self.assertIn("2026-08", monthly.index)
+        self.assertEqual(monthly.loc["2025-08", "nh3_monthly_mean"], 10.0)
+        self.assertEqual(monthly.loc["2026-08", "nh3_monthly_mean"], 20.0)
+        self.assertEqual(monthly.loc["2025-08", "days_in_data"], 2)
 
     def test_build_period_summaries_returns_none_for_empty_input(self):
         monthly, weekday = build_period_summaries(pd.DataFrame())

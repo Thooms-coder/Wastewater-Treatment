@@ -109,14 +109,18 @@ def _make_unique_columns(names: list[str], tags: list[object]) -> list[str]:
     return out
 
 
-def _coerce_numeric(series: pd.Series) -> pd.Series:
+def _coerce_numeric(series: pd.Series, struvite: bool = False) -> pd.Series:
     if series.dtype == object:
         cleaned = (
             series.astype(str)
             .str.replace(",", "", regex=False)
             .str.strip()
         )
-        cleaned = cleaned.str.lower().replace({"yes": "3500", "no": "1650"})
+        # The yes/no -> observation-code substitution is meaningful only for the
+        # struvite observation column; applying it to every text column would
+        # silently turn unrelated "yes"/"no" cells into the struvite sentinels.
+        if struvite:
+            cleaned = cleaned.str.lower().replace({"yes": "3500", "no": "1650"})
         cleaned = cleaned.mask(cleaned.isin(["", "nan", "NaN"]), np.nan)
         return pd.to_numeric(cleaned, errors="coerce")
     return pd.to_numeric(series, errors="coerce")
@@ -218,7 +222,8 @@ def load_daily_report(path: Path, prefix: str) -> tuple[pd.DataFrame, dict]:
 
     out = pd.DataFrame(index=index)
     for col in value_columns:
-        out[col] = _coerce_numeric(values[col]).to_numpy()
+        is_struvite = "struvite" in col.lower()
+        out[col] = _coerce_numeric(values[col], struvite=is_struvite).to_numpy()
 
     out = out.sort_index()
     out = out[~out.index.duplicated(keep="last")]
@@ -327,11 +332,14 @@ def build_daily_report_features(
     out = pd.concat(frames, axis=1).sort_index()
 
     if chemical is not None and not chemical.empty:
+        # Only accept a genuine lb/day column here. Falling back to an mg/L
+        # column would silently store a concentration as a mass rate (and then
+        # multiply it by the strength fraction), producing dimensionally wrong
+        # "active lb/day" values.
         ferric_solution = _first_existing(
             chemical,
             [
                 "chem_ferric_chloride_totes_applied_at_surge_tank_lbs_day",
-                "chem_ferric_chloride_totes_applied_at_surge_tank_mg_l",
             ],
         )
         out["ferric_solution_lbs_per_day_measured"] = ferric_solution

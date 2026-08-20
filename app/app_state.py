@@ -103,7 +103,15 @@ def build_filtered_state(
         name: [ts for ts in times if start_ts <= ts <= end_ts]
         for name, times in full_state["all_events"].items()
     }
-    event_metrics_df = compute_event_metrics_table(master_df) if master_df is not None else full_state["event_metrics_df"]
+    # Event metrics are computed on the FULL record (so baseline/post windows are
+    # never truncated by the reporting window); only the set of events is
+    # restricted to the selected window.
+    if full_state["master_df"] is not None:
+        event_metrics_df = compute_event_metrics_table(
+            full_state["master_df"], event_window=(start_ts, end_ts)
+        )
+    else:
+        event_metrics_df = full_state["event_metrics_df"]
 
     return {
         "master_df": master_df,

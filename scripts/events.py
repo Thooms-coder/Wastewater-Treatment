@@ -88,10 +88,14 @@ def detect_transitions(df, column, chemical_name):
     Uses robust state-change detection.
     """
 
-    state_change = df[column].ne(df[column].shift())
+    # Use a first-difference so the first row (whose shift is NaN) is not
+    # mistaken for a transition. The availability flags initialize to 1, so
+    # ne(shift) would otherwise emit a phantom "ON" event at the series start.
+    series = df[column].fillna(0).astype(int)
+    diff = series.diff()
 
-    on_events = df.index[state_change & (df[column] == 1)]
-    off_events = df.index[state_change & (df[column] == 0)]
+    on_events = df.index[diff == 1]
+    off_events = df.index[diff == -1]
 
     records = []
 

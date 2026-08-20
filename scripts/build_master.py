@@ -78,6 +78,44 @@ def build_hourly_table(df):
 
     return hourly
 
+# Columns whose presence marks the start of the operational monitoring period.
+STUDY_FLOW_COLS = [
+    "west_sludge_out_gpm",
+    "east_sludge_out_gpm",
+    "eest_sludge_out_gpm",
+]
+
+
+def clip_to_study_period(df):
+    """
+    Restrict the record to the active monitoring period.
+
+    Gas sensors carry isolated exploratory snippets from 2022 and 2024 with no
+    concurrent operational (water/flow) data. Building a continuous 1-minute
+    grid all the way back to 2022 would fabricate multi-year, mostly-empty spans
+    and pollute the daily/monthly aggregates. We therefore anchor the start of
+    the record at the first timestamp with operational flow data (kept through
+    the latest available reading, so newer gas-only data is retained).
+    """
+    flow_cols = [c for c in STUDY_FLOW_COLS if c in df.columns]
+    if not flow_cols:
+        return df
+
+    has_flow = df[flow_cols].notna().any(axis=1)
+    if not has_flow.any():
+        return df
+
+    study_start = df.index[has_flow][0]
+    clipped = df.loc[study_start:]
+    dropped = len(df) - len(clipped)
+    if dropped:
+        print(
+            f"[build_master] Clipped {dropped:,} pre-study rows "
+            f"(records start at {study_start})"
+        )
+    return clipped
+
+
 def build_master_table():
     """
     Build the full master dataset used for exploration and modeling.
@@ -88,6 +126,7 @@ def build_master_table():
     # Load and preprocess
     # --------------------------------------------------
     raw = load_all_data()
+    raw = clip_to_study_period(raw)
     clean = preprocess_data(raw)
 
     # --------------------------------------------------
@@ -109,13 +148,10 @@ def build_master_table():
     clean = clean.reindex(full_index)
 
     # Forward-fill WATER data (flow, tanks, pumps, etc.)
-    water_cols = [c for c in clean.columns if "sludge" in c or "flow" in c or "pump" in c]
-    
-    print("Number of columns:", len(clean.columns))
-    print("Unique columns:", len(clean.columns.unique()))
-    dupes = clean.columns[clean.columns.duplicated()].tolist()
-    print("Duplicate columns:", dupes)
-
+    water_cols = [
+        c for c in clean.columns
+        if "sludge" in c or "flow" in c or "pump" in c or "tank" in c
+    ]
     clean[water_cols] = clean[water_cols].ffill()
 
     # --------------------------------------------------

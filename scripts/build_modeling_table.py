@@ -43,8 +43,8 @@ def _minutes_since_event(index: pd.DatetimeIndex, event_times: pd.Index) -> pd.S
     if len(event_times) == 0:
         return pd.Series(values, index=index)
 
-    event_ns = event_times.view("i8")
-    idx_ns = index.view("i8")
+    event_ns = event_times.asi8
+    idx_ns = index.asi8
     pos = np.searchsorted(event_ns, idx_ns, side="right") - 1
     valid = pos >= 0
     values[valid] = (idx_ns[valid] - event_ns[pos[valid]]) / 60_000_000_000
@@ -164,15 +164,41 @@ def _add_quality_flags(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _add_split_column(df: pd.DataFrame) -> pd.DataFrame:
+def _add_split_column(df: pd.DataFrame, embargo_minutes: int = max(TARGET_HORIZONS_MIN)) -> pd.DataFrame:
     out = df.copy()
     n = len(out)
+    if n == 0:
+        out["split"] = pd.Series(dtype=object)
+        return out
+
     train_end = int(n * 0.70)
     validation_end = int(n * 0.85)
 
     out["split"] = "test"
-    out.iloc[:train_end, out.columns.get_loc("split")] = "train"
-    out.iloc[train_end:validation_end, out.columns.get_loc("split")] = "validation"
+    col = out.columns.get_loc("split")
+    out.iloc[:train_end, col] = "train"
+    out.iloc[train_end:validation_end, col] = "validation"
+
+    # Embargo: because targets are forward-shifted by up to `embargo_minutes`,
+    # rows in the last `embargo_minutes` of a block have targets that fall inside
+    # the next block. Void them so future information does not leak across the
+    # chronological split boundaries.
+    out = _apply_time_embargo(out, "split", train_end, validation_end, embargo_minutes)
+    return out
+
+
+def _apply_time_embargo(out, split_col, train_end, validation_end, embargo_minutes):
+    if not embargo_minutes or len(out) == 0:
+        return out
+    emb = pd.Timedelta(minutes=embargo_minutes)
+    if train_end > 0:
+        train_last = out.index[train_end - 1]
+        mask = (out[split_col] == "train") & (out.index > train_last - emb)
+        out.loc[mask, split_col] = "embargo"
+    if validation_end > train_end:
+        val_last = out.index[validation_end - 1]
+        mask = (out[split_col] == "validation") & (out.index > val_last - emb)
+        out.loc[mask, split_col] = "embargo"
     return out
 
 

@@ -17,6 +17,10 @@ TEMP_H2S = "h2s_temperature_°f"
 # --------------------------------------------------
 WEST_GPM = "west_sludge_out_gpm"
 EAST_GPM = "east_sludge_out_gpm"
+# "Digesters Sludge Out Flow" is only the section title in the water exports;
+# there is no such data column. The digesters-out flow is the sum of the West
+# and East sludge-out streams, so DIGESTER_GPM is retained for backward
+# compatibility but intentionally excluded from the flow/aggregation lists.
 DIGESTER_GPM = "digesters_sludge_out_flow"
 DIG_GPM = DIGESTER_GPM
 FLOW = "east_sludge_out_gpm_combined"
@@ -24,13 +28,11 @@ FLOW = "east_sludge_out_gpm_combined"
 FLOW_COLS = [
     WEST_GPM,
     EAST_GPM,
-    DIGESTER_GPM,
 ]
 
 WATER_COLS = [
     EAST_GPM,
     WEST_GPM,
-    DIGESTER_GPM,
     FLOW,
 ]
 

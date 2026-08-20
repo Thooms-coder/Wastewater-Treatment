@@ -125,3 +125,6 @@ data/raw/.gitkeep
 # !plots/.gitkeep
 
 # !figures/.gitkeep
+
+# Local audit/analysis virtualenv
+.audit_venv/

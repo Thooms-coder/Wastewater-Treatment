@@ -1,7 +1,7 @@
 {
   "source": "/Users/mutsamungoshi/Documents/Wastewater Treatment/data/processed/modeling_table.parquet",
-  "n_total_rows": 351300,
-  "n_feature_columns": 193,
+  "n_total_rows": 451408,
+  "n_feature_columns": 190,
   "feature_columns_preview": [
     "bio_bio_cake_ph_su",
     "bio_bio_gro_sludge_dry_tons_tons",
@@ -33,7 +33,7 @@
     "nh3_t_plus_60min": {
       "target_name": "nh3_t_plus_60min",
       "target_col": "nh3_roll_mean_15min_t_plus_60min",
-      "n_features": 193,
+      "n_features": 190,
       "feature_columns": [
         "bio_bio_cake_ph_su",
         "bio_bio_gro_sludge_dry_tons_tons",
@@ -112,7 +112,6 @@
         "daily_report_features_available",
         "dayofweek",
         "dayofyear",
-        "digesters_sludge_out_flow",
         "dow_cos",
         "dow_sin",
         "east_sludge_flow_today_gal",
@@ -158,6 +157,7 @@
         "h2s_lag_30min",
         "h2s_lag_5min",
         "h2s_lag_60min",
+        "h2s_nh3",
         "h2s_per_lb",
         "h2s_roll_max_15min",
         "h2s_roll_max_30min",
@@ -167,7 +167,7 @@
         "h2s_roll_mean_30min",
         "h2s_roll_mean_5min",
         "h2s_roll_mean_60min",
-        "h2s_temperature_\u00b0f",
+        "h2s_temperature_\u00e2\u00b0f",
         "h2s_x_flow",
         "hcl_active_lbs_per_day",
         "hcl_active_lbs_per_day_assumed",
@@ -198,6 +198,7 @@
         "minutes_since_hcl_state_change",
         "month",
         "nh3_battery_volts",
+        "nh3_dosage_mg/l",
         "nh3_humidity_%",
         "nh3_lag_15min",
         "nh3_lag_30min",
@@ -213,15 +214,11 @@
         "nh3_roll_mean_30min",
         "nh3_roll_mean_5min",
         "nh3_roll_mean_60min",
-        "nh3_temperature_\u00b0f",
+        "nh3_temperature_\u00e2\u00b0f",
         "nh3_x_flow",
         "pH_fixed",
         "sensor_valid",
         "sensor_valid_flag",
-        "temp_h2s_x_ferric",
-        "temp_h2s_x_hcl",
-        "temp_nh3_x_ferric",
-        "temp_nh3_x_hcl",
         "total_gpm",
         "transferred_lbs_vol",
         "truck_activity_proxy",
@@ -231,41 +228,41 @@
       ],
       "splits": {
         "train": {
-          "n_rows": 26256,
+          "n_rows": 26076,
           "model_metrics": {
-            "mae": 0.31975112960505087,
-            "rmse": 0.4402312735912786,
-            "r2": 0.9972727933893639
+            "mae": 0.3305097643755043,
+            "rmse": 0.45398081631368953,
+            "r2": 0.997104997336996
           },
           "baseline_metrics": {
-            "mae": 2.168620082605458,
-            "rmse": 3.455201219406271,
-            "r2": 0.8320024503812028
+            "mae": 2.1523938572719064,
+            "rmse": 3.4371677826883134,
+            "r2": 0.8340506982178134
           },
           "model_threshold_metrics": {
             "threshold": 5.0,
-            "accuracy": 0.9999238269347959,
+            "accuracy": 0.9999616505599018,
             "precision": 1.0,
-            "recall": 0.9999232304621526
+            "recall": 0.9999613481756339
           },
           "baseline_threshold_metrics": {
             "threshold": 5.0,
-            "accuracy": 0.9954677026203534,
-            "precision": 0.9977352117001267,
-            "recall": 0.9976969138645785
+            "accuracy": 0.9954364166283173,
+            "precision": 0.9977194542151444,
+            "recall": 0.9976808905380334
           }
         },
         "validation": {
-          "n_rows": 5626,
+          "n_rows": 5446,
           "model_metrics": {
-            "mae": 3.5462769612344385,
-            "rmse": 4.502386927581334,
-            "r2": 0.6958607679977854
+            "mae": 3.5470464672293027,
+            "rmse": 4.488029685868865,
+            "r2": 0.6976843897958429
           },
           "baseline_metrics": {
-            "mae": 1.737259548919698,
-            "rmse": 2.513727562961219,
-            "r2": 0.9051967491590102
+            "mae": 1.7668747704737422,
+            "rmse": 2.542220714161141,
+            "r2": 0.9029991282944017
           },
           "model_threshold_metrics": {
             "threshold": 5.0,
@@ -283,14 +280,14 @@
         "test": {
           "n_rows": 5627,
           "model_metrics": {
-            "mae": 6.372695974622989,
-            "rmse": 7.541953581483167,
-            "r2": -1.5740711159277034
+            "mae": 6.504127283006878,
+            "rmse": 7.718715063967727,
+            "r2": -1.6961421202318125
           },
           "baseline_metrics": {
-            "mae": 1.0069382141267693,
-            "rmse": 1.5925467285982002,
-            "r2": 0.8852276696567928
+            "mae": 1.006938775211839,
+            "rmse": 1.5925474189504982,
+            "r2": 0.8852275882358902
           },
           "model_threshold_metrics": {
             "threshold": 5.0,
@@ -313,7 +310,7 @@
     "h2s_t_plus_60min": {
       "target_name": "h2s_t_plus_60min",
       "target_col": "h2s_roll_max_15min_t_plus_60min",
-      "n_features": 193,
+      "n_features": 190,
       "feature_columns": [
         "bio_bio_cake_ph_su",
         "bio_bio_gro_sludge_dry_tons_tons",
@@ -392,7 +389,6 @@
         "daily_report_features_available",
         "dayofweek",
         "dayofyear",
-        "digesters_sludge_out_flow",
         "dow_cos",
         "dow_sin",
         "east_sludge_flow_today_gal",
@@ -438,6 +434,7 @@
         "h2s_lag_30min",
         "h2s_lag_5min",
         "h2s_lag_60min",
+        "h2s_nh3",
         "h2s_per_lb",
         "h2s_roll_max_15min",
         "h2s_roll_max_30min",
@@ -447,7 +444,7 @@
         "h2s_roll_mean_30min",
         "h2s_roll_mean_5min",
         "h2s_roll_mean_60min",
-        "h2s_temperature_\u00b0f",
+        "h2s_temperature_\u00e2\u00b0f",
         "h2s_x_flow",
         "hcl_active_lbs_per_day",
         "hcl_active_lbs_per_day_assumed",
@@ -478,6 +475,7 @@
         "minutes_since_hcl_state_change",
         "month",
         "nh3_battery_volts",
+        "nh3_dosage_mg/l",
         "nh3_humidity_%",
         "nh3_lag_15min",
         "nh3_lag_30min",
@@ -493,15 +491,11 @@
         "nh3_roll_mean_30min",
         "nh3_roll_mean_5min",
         "nh3_roll_mean_60min",
-        "nh3_temperature_\u00b0f",
+        "nh3_temperature_\u00e2\u00b0f",
         "nh3_x_flow",
         "pH_fixed",
         "sensor_valid",
         "sensor_valid_flag",
-        "temp_h2s_x_ferric",
-        "temp_h2s_x_hcl",
-        "temp_nh3_x_ferric",
-        "temp_nh3_x_hcl",
         "total_gpm",
         "transferred_lbs_vol",
         "truck_activity_proxy",
@@ -511,16 +505,16 @@
       ],
       "splits": {
         "train": {
-          "n_rows": 26256,
+          "n_rows": 26076,
           "model_metrics": {
-            "mae": 0.0008256453015101669,
-            "rmse": 0.004042776123057534,
-            "r2": 0.961813582103434
+            "mae": 0.0007761805035988457,
+            "rmse": 0.0037814263126544176,
+            "r2": 0.9668195607174312
           },
           "baseline_metrics": {
-            "mae": 0.002254722730042657,
-            "rmse": 0.02930111058628694,
-            "r2": -1.0059388974647265
+            "mae": 0.0022702868538119346,
+            "rmse": 0.029402067967931284,
+            "r2": -1.005980015652585
           },
           "model_threshold_metrics": {
             "threshold": 1.0,
@@ -536,26 +530,26 @@
           }
         },
         "validation": {
-          "n_rows": 5626,
+          "n_rows": 5446,
           "model_metrics": {
-            "mae": 0.1421359182644344,
-            "rmse": 0.33992139410336614,
-            "r2": -0.1912762089325326
+            "mae": 0.13142494978585254,
+            "rmse": 0.33413754615321056,
+            "r2": -0.17159581019161974
           },
           "baseline_metrics": {
-            "mae": 0.0631117430975234,
-            "rmse": 0.15534352632266282,
-            "r2": 0.751204919288462
+            "mae": 0.0604602766556494,
+            "rmse": 0.15400821211793655,
+            "r2": 0.751105665838139
           },
           "model_threshold_metrics": {
             "threshold": 1.0,
-            "accuracy": 0.957518663348738,
+            "accuracy": 0.9561145795078957,
             "precision": NaN,
             "recall": 0.0
           },
           "baseline_threshold_metrics": {
             "threshold": 1.0,
-            "accuracy": 0.9573409171702808,
+            "accuracy": 0.9559309585016526,
             "precision": 0.497907949790795,
             "recall": 0.497907949790795
           }
@@ -563,9 +557,9 @@
         "test": {
           "n_rows": 5627,
           "model_metrics": {
-            "mae": 0.4304134166751036,
-            "rmse": 0.6680064718341956,
-            "r2": -0.7007109202207886
+            "mae": 0.43215429416623224,
+            "rmse": 0.6705436586313346,
+            "r2": -0.7136545548036013
           },
           "baseline_metrics": {
             "mae": 0.12685267460458505,

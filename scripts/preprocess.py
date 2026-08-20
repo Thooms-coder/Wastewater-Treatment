@@ -45,7 +45,14 @@ def preprocess_data(df):
     # --------------------------------------------------
     if "eest_sludge_out_gpm" in df.columns:
         if "east_sludge_out_gpm" in df.columns:
-            print("[WARN] Both eest_ and east_ exist. Dropping misspelled column.")
+            # Both spellings appear across the water exports. Merge them (prefer
+            # the correctly-spelled column, fall back to the misspelled one)
+            # rather than dropping either — dropping loses whichever column holds
+            # the bulk of the readings.
+            print("[WARN] Both eest_ and east_ exist. Merging into east_sludge_out_gpm.")
+            df["east_sludge_out_gpm"] = df["east_sludge_out_gpm"].combine_first(
+                df["eest_sludge_out_gpm"]
+            )
             df = df.drop(columns=["eest_sludge_out_gpm"])
         else:
             df = df.rename(columns={

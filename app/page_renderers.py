@@ -212,6 +212,10 @@ def render_operations_review_page(ctx):
     all_events = ctx["all_events"]
     start_ts = ctx["start_ts"]
     end_ts = ctx["end_ts"]
+    # Full (unfiltered) record for event-window extraction so baseline/post
+    # windows are not truncated at the edges of the selected reporting window.
+    full_master_df = ctx.get("full_master_df", master_df)
+    event_window = (start_ts, end_ts)
     coverage_value = ctx["coverage_value"]
     has_data = ctx["has_data"]
     detect_transitions = ctx["detect_transitions"]
@@ -336,8 +340,11 @@ def render_operations_review_page(ctx):
                 key="ops_signal_mode",
             )
             st.form_submit_button("Inspect event window")
-        on_events, off_events = detect_transitions(master_df, EVENT_COLUMNS[event_family])
-        event_times = on_events if event_direction == "ON" else off_events
+        on_events, off_events = detect_transitions(full_master_df, EVENT_COLUMNS[event_family])
+        event_times = pd.DatetimeIndex(on_events if event_direction == "ON" else off_events)
+        # Only offer events inside the selected window, but pull each event's
+        # ±48h window from the full record so it is not truncated at the edges.
+        event_times = event_times[(event_times >= start_ts) & (event_times <= end_ts)]
         if len(event_times) == 0:
             st.warning("No events found for this selection.")
         else:
@@ -345,7 +352,7 @@ def render_operations_review_page(ctx):
             with st.form("ops_single_event_timestamp_form"):
                 event_time = st.selectbox("Event timestamp", list(event_times), format_func=lambda x: x.strftime("%Y-%m-%d %H:%M"), key="ops_event_time")
                 st.form_submit_button("Load selected event")
-            window_df = master_df.loc[event_time - WINDOW_48H : event_time + WINDOW_48H].copy()
+            window_df = full_master_df.loc[event_time - WINDOW_48H : event_time + WINDOW_48H].copy()
             window_df["minutes_from_event"] = (window_df.index - event_time).total_seconds() / 60
             pairs = {
                 "NH3 vs H2S": (NH3, H2S, "NH₃ (ppm)", "H₂S (ppm)", False),
@@ -373,7 +380,9 @@ def render_operations_review_page(ctx):
             signal_label = s3.selectbox("Signal", ["NH3", "H2S"], key="ops_study_signal")
             st.form_submit_button("Update event study")
         signal_col = NH3 if signal_label == "NH3" else H2S
-        summary, aligned_df, pretrend_ok = compute_event_study_summary(master_df, chem, event_type, signal_col)
+        summary, aligned_df, pretrend_ok = compute_event_study_summary(
+            full_master_df, chem, event_type, signal_col, event_window=event_window
+        )
         if summary is None or summary.empty:
             st.warning("No aligned event windows were available for this selection.")
         else:
@@ -446,7 +455,11 @@ def render_operations_review_page(ctx):
         y1, y2, y1_label, y2_label = compare_options[choice]
         compare_events = {}
         for chem_name, col in EVENT_COLUMNS.items():
-            on_events, off_events = detect_transitions(master_df, col)
+            on_events, off_events = detect_transitions(full_master_df, col)
+            on_events = pd.DatetimeIndex(on_events)
+            off_events = pd.DatetimeIndex(off_events)
+            off_events = off_events[(off_events >= start_ts) & (off_events <= end_ts)]
+            on_events = on_events[(on_events >= start_ts) & (on_events <= end_ts)]
             if len(off_events) > 0:
                 compare_events[f"{chem_name} OFF"] = off_events[0]
             if len(on_events) > 0:
@@ -457,7 +470,7 @@ def render_operations_review_page(ctx):
         else:
             event_windows = {}
             for event_name, center in ordered.items():
-                w = master_df.loc[center - WINDOW_48H : center + WINDOW_48H].copy()
+                w = full_master_df.loc[center - WINDOW_48H : center + WINDOW_48H].copy()
                 if not w.empty:
                     w["minutes"] = (w.index - center).total_seconds() / 60
                 event_windows[event_name] = w

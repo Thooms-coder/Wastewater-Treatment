@@ -107,15 +107,29 @@ def load_modeling_table() -> pd.DataFrame:
     return df
 
 
-def assign_valid_splits(df: pd.DataFrame) -> pd.DataFrame:
+def assign_valid_splits(df: pd.DataFrame, embargo_minutes: int = 180) -> pd.DataFrame:
     out = df.sort_index().copy()
     n = len(out)
     train_end = int(n * 0.70)
     validation_end = int(n * 0.85)
 
     out["model_split"] = "test"
-    out.iloc[:train_end, out.columns.get_loc("model_split")] = "train"
-    out.iloc[train_end:validation_end, out.columns.get_loc("model_split")] = "validation"
+    col = out.columns.get_loc("model_split")
+    out.iloc[:train_end, col] = "train"
+    out.iloc[train_end:validation_end, col] = "validation"
+
+    # Embargo rows straddling the chronological boundaries: with forward-shifted
+    # targets (up to `embargo_minutes` ahead), the tail of each block would
+    # otherwise carry targets that live inside the next block. Excluding them
+    # prevents future information from leaking across the split.
+    if n and embargo_minutes:
+        emb = pd.Timedelta(minutes=embargo_minutes)
+        if train_end > 0:
+            train_last = out.index[train_end - 1]
+            out.loc[(out["model_split"] == "train") & (out.index > train_last - emb), "model_split"] = "embargo"
+        if validation_end > train_end:
+            val_last = out.index[validation_end - 1]
+            out.loc[(out["model_split"] == "validation") & (out.index > val_last - emb), "model_split"] = "embargo"
     return out
 
 

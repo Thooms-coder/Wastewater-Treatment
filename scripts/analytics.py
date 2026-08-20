@@ -149,7 +149,9 @@ def compute_single_event_metrics(
         pct_change = (delta / baseline_val) * 100
 
     below = post[post < baseline_val]
-    persistence = 0 if below.empty else below.index.max() - below.index.min()
+    # Minutes spent below baseline (post window is on a 1-minute relative index),
+    # not the span between the first and last below-baseline sample.
+    persistence = int(below.notna().sum())
     time_to_min = np.nan if post.empty else post.idxmin()
     iqr_post = post.quantile(0.75) - post.quantile(0.25)
 

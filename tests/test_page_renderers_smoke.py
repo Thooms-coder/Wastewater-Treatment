@@ -192,7 +192,7 @@ class PageRendererSmokeTests(unittest.TestCase):
             "has_data": lambda df, col: df is not None and col in df.columns and df[col].notna().any(),
             "available_columns": lambda df, candidates: [c for c in candidates if c in df.columns],
             "detect_transitions": lambda df, col: ([minute_index[72]], []),
-            "compute_event_study_summary": lambda df, chem, event_type, signal: (
+            "compute_event_study_summary": lambda df, chem, event_type, signal, event_window=None: (
                 pd.DataFrame({"median": [10.0], "q25": [9.0], "q75": [11.0]}, index=[0]),
                 pd.DataFrame({"event_1": [10.0]}, index=[0]),
                 True,

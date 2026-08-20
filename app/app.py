@@ -165,6 +165,7 @@ render_page(
     page,
     {
         "master_df": master_df,
+        "full_master_df": full_master_df,
         "hourly_df": hourly_df,
         "daily_df": daily_df,
         "monthly_df": monthly_df,

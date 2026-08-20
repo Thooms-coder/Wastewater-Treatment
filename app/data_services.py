@@ -267,8 +267,23 @@ def aggregate_event_metrics(metrics_list):
     return shared_aggregate_event_metrics(metrics_list)
 
 
+def _filter_events_to_window(event_index, event_window):
+    if event_window is None:
+        return event_index
+    start_ts, end_ts = event_window
+    return event_index[(event_index >= start_ts) & (event_index <= end_ts)]
+
+
 @st.cache_data(show_spinner=False)
-def compute_event_metrics_table(df):
+def compute_event_metrics_table(df, event_window=None):
+    """
+    Compute event-response metrics.
+
+    Signal baseline/post windows (up to -48h / +96h around each transition) are
+    always extracted from the full record passed in as ``df``. Only the *set of
+    events* is restricted to ``event_window`` (the selected reporting window), so
+    events near the window edge keep complete, untruncated windows.
+    """
     if df is None:
         return pd.DataFrame()
 
@@ -279,6 +294,8 @@ def compute_event_metrics_table(df):
         if event_col not in df.columns:
             continue
         on_events, off_events = detect_transitions(df, event_col)
+        on_events = _filter_events_to_window(on_events, event_window)
+        off_events = _filter_events_to_window(off_events, event_window)
         for event_type, event_times in {"ON": on_events, "OFF": off_events}.items():
             for signal_name, signal_col in targets.items():
                 if signal_col not in df.columns:
@@ -328,12 +345,17 @@ def check_pretrend(summary, window=PRETREND_WINDOW, tolerance=PRETREND_TOL):
 
 
 @st.cache_data(show_spinner=False)
-def compute_event_study_summary(df, chem_name, event_type, signal_col):
+def compute_event_study_summary(df, chem_name, event_type, signal_col, event_window=None):
+    """
+    Aligned event-study summary. Windows are extracted from the full record
+    (``df``); only the set of events is restricted to ``event_window``.
+    """
     if df is None or signal_col not in df.columns:
         return None, pd.DataFrame(), True
     event_col = EVENT_COLUMNS[chem_name]
     on_events, off_events = detect_transitions(df, event_col)
     event_times = on_events if event_type == "ON" else off_events
+    event_times = _filter_events_to_window(event_times, event_window)
 
     aligned_windows = []
     for t in event_times:
@@ -368,7 +390,23 @@ def build_month_labels(index_like):
         1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
         7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
     }
-    return [month_names.get(int(x), str(x)) for x in index_like]
+    labels = []
+    for x in index_like:
+        s = str(x)
+        # Year-aware "YYYY-MM" key -> "Mon YYYY"
+        if len(s) == 7 and s[4] == "-":
+            year, month = s.split("-")
+            try:
+                labels.append(f"{month_names.get(int(month), month)} {year}")
+                continue
+            except ValueError:
+                pass
+        # Legacy plain month-number key -> "Mon"
+        try:
+            labels.append(month_names.get(int(float(s)), s))
+        except (ValueError, TypeError):
+            labels.append(s)
+    return labels
 
 
 def numeric_columns(df):
@@ -388,7 +426,9 @@ def build_period_summaries(daily):
         return None, None
 
     daily = daily.sort_index().copy()
-    daily["month"] = daily.index.month
+    # Year-aware month key ("YYYY-MM") so the same calendar month across
+    # different years is not merged into one bar.
+    daily["month"] = daily.index.strftime("%Y-%m")
     daily["weekday"] = daily.index.dayofweek
 
     numeric_cols = numeric_columns(daily)
@@ -424,9 +464,11 @@ def build_period_summaries(daily):
         weekday_rename["transferred_lbs_vol_daily"] = "transferred_lbs_vol_weekday_mean"
     weekday = weekday.rename(columns=weekday_rename)
     weekday["days_in_data"] = daily.groupby("weekday").size()
-    weekday["weekday_name"] = [
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-    ][: len(weekday)]
+    weekday_names = {
+        0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday",
+        4: "Friday", 5: "Saturday", 6: "Sunday",
+    }
+    weekday["weekday_name"] = weekday.index.map(weekday_names)
 
     return monthly, weekday
 

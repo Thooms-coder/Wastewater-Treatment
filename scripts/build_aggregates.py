@@ -46,7 +46,9 @@ def run_aggregations():
         raise TypeError("master_daily.parquet must have a DatetimeIndex")
 
     df = df.copy()
-    df["month"] = df.index.month
+    # Year-aware month key ("YYYY-MM") so the same calendar month in different
+    # years is not conflated. Lexical sort of this key is chronological.
+    df["month"] = df.index.strftime("%Y-%m")
     df["weekday"] = df.index.dayofweek
 
     # --------------------------------------------------
@@ -158,11 +160,13 @@ def run_aggregations():
     # Number of contributing daily rows by weekday
     weekday["days_in_data"] = df.groupby("weekday").size()
 
-    # Optional weekday labels
-    weekday["weekday_name"] = [
-        "Monday", "Tuesday", "Wednesday", "Thursday",
-        "Friday", "Saturday", "Sunday"
-    ][: len(weekday)]
+    # Optional weekday labels — map from the actual day-of-week index so labels
+    # stay correct even when some weekdays are absent from the data.
+    weekday_names = {
+        0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday",
+        4: "Friday", 5: "Saturday", 6: "Sunday",
+    }
+    weekday["weekday_name"] = weekday.index.map(weekday_names)
 
     # --------------------------------------------------
     # Save outputs
