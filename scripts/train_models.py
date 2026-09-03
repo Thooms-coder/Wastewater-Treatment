@@ -23,43 +23,61 @@ PREDICTIONS_DIR.mkdir(parents=True, exist_ok=True)
 TARGET_CONFIGS = {
     "nh3_t_plus_60min": {
         "target_col": f"{NH3}_t_plus_60min",
+        "delta_col": "nh3_delta_60min",
         "current_col": NH3,
         "threshold_col": "nh3_exceeds_5.0_ppm_t_plus_60min",
         "valid_col": "model_row_valid_60min",
     },
     "h2s_t_plus_60min": {
         "target_col": f"{H2S}_t_plus_60min",
+        "delta_col": "h2s_delta_60min",
         "current_col": H2S,
         "threshold_col": "h2s_exceeds_1.0_ppm_t_plus_60min",
         "valid_col": "model_row_valid_60min",
     },
 }
 
-NON_LEAKY_EXCLUDE_PATTERNS = [
-    "_t_plus_",
-    "_delta_",
-    "_exceeds_",
-    "target_ready_",
-    "model_row_valid_",
-]
-
-EXCLUDE_COLUMNS = {
-    "split",
+# Modeling approach (chosen empirically — see the training verdict):
+# Predict the CHANGE y(t+H) - y(t) from a pruned, physically-meaningful feature
+# set, then reconstruct the level as y(t) + alpha * predicted_change, with the
+# shrinkage alpha tuned on validation. This anchors the forecast to the current
+# value like persistence (so it can't blow up in a new regime the way a
+# 190-feature level model did), while still exploiting short-horizon structure.
+FEATURE_EXCLUDE_PATTERNS = ["_t_plus_", "_delta_", "_exceeds_", "target_ready_", "model_row_valid_"]
+FEATURE_KEEP_EXACT = {
+    "total_gpm", "lbs_per_min", "transferred_lbs_vol",
+    "west_sludge_out_gpm", "east_sludge_out_gpm", "east_sludge_out_gpm_combined",
+    "ferric_available", "hcl_available",
+    "ferric_active_lbs_per_day", "hcl_active_lbs_per_day",
+    "ferric_solution_lbs_per_day", "hcl_solution_lbs_per_day",
+    "is_weekend", "hour_sin", "hour_cos", "dow_sin", "dow_cos", "hour", "dayofweek", "month",
 }
-
-
-def _is_feature_column(col: str) -> bool:
-    if col in EXCLUDE_COLUMNS:
-        return False
-    return not any(pattern in col for pattern in NON_LEAKY_EXCLUDE_PATTERNS)
+FEATURE_KEEP_PREFIX = (
+    "nh3_lag_", "h2s_lag_", "nh3_roll_", "h2s_roll_", "minutes_since_",
+    "flow_x_", "load_x_", "temp_nh3_x_", "temp_h2s_x_", "nh3_x_", "h2s_x_",
+)
+FEATURE_KEEP_CONTAINS = ("temperature", "humidity")
 
 
 def build_feature_columns(df: pd.DataFrame) -> list[str]:
-    candidates = [
-        c for c in df.columns
-        if _is_feature_column(c) and pd.api.types.is_numeric_dtype(df[c])
-    ]
-    return sorted(candidates)
+    """Pruned, leakage-free, physically-meaningful features (drops the ~170
+    daily-report columns that made the level model overfit)."""
+    out = []
+    for c in df.columns:
+        if any(p in c for p in FEATURE_EXCLUDE_PATTERNS) or c == "split":
+            continue
+        if not pd.api.types.is_numeric_dtype(df[c]):
+            continue
+        if c in FEATURE_KEEP_EXACT or c.startswith(FEATURE_KEEP_PREFIX) or any(k in c for k in FEATURE_KEEP_CONTAINS):
+            out.append(c)
+    return sorted(set(out))
+
+
+def _best_shrinkage(y_true, current, delta_pred):
+    """alpha in [0,1] minimizing RMSE(y_true, current + alpha*delta_pred).
+    alpha=0 recovers persistence; alpha=1 trusts the model fully."""
+    alphas = np.linspace(0.0, 1.0, 21)
+    return float(min(alphas, key=lambda a: np.sqrt(mean_squared_error(y_true, current + a * delta_pred))))
 
 
 def metric_dict(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
@@ -139,17 +157,15 @@ def train_target_model(
     target_cfg: dict,
     feature_cols: list[str],
 ) -> dict:
-    valid_mask = (df[target_cfg["valid_col"]] == 1) & df[target_cfg["target_col"]].notna()
+    target_col, delta_col, current_col = target_cfg["target_col"], target_cfg["delta_col"], target_cfg["current_col"]
+    valid_mask = (df[target_cfg["valid_col"]] == 1) & df[target_col].notna() & df[delta_col].notna()
     model_df = assign_valid_splits(df.loc[valid_mask].copy())
 
     train_df = model_df[model_df["model_split"] == "train"]
     validation_df = model_df[model_df["model_split"] == "validation"]
     test_df = model_df[model_df["model_split"] == "test"]
 
-    X_train = train_df[feature_cols]
-    y_train = train_df[target_cfg["target_col"]]
-    baseline_fallback = float(y_train.median())
-
+    # Train on the CHANGE (delta), not the level.
     model = HistGradientBoostingRegressor(
         loss="squared_error",
         learning_rate=0.05,
@@ -160,11 +176,22 @@ def train_target_model(
         early_stopping=False,
         random_state=42,
     )
-    model.fit(X_train, y_train)
+    model.fit(train_df[feature_cols], train_df[delta_col])
+
+    # Shrinkage alpha tuned on validation: level = current + alpha * delta_pred.
+    val_delta_pred = model.predict(validation_df[feature_cols])
+    alpha = _best_shrinkage(
+        validation_df[target_col].to_numpy(),
+        validation_df[current_col].to_numpy(),
+        val_delta_pred,
+    )
+    baseline_fallback = float(train_df[target_col].median())
 
     outputs = {
         "target_name": target_name,
-        "target_col": target_cfg["target_col"],
+        "target_col": target_col,
+        "approach": "delta + pruned features + validation-tuned shrinkage",
+        "shrinkage_alpha": alpha,
         "n_features": len(feature_cols),
         "feature_columns": feature_cols,
         "splits": {},
@@ -178,10 +205,11 @@ def train_target_model(
 
     for split_name, split_df in [("train", train_df), ("validation", validation_df), ("test", test_df)]:
         X = split_df[feature_cols]
-        y = split_df[target_cfg["target_col"]]
-        y_pred = model.predict(X)
+        y = split_df[target_col]
+        # Reconstruct the level from current value + shrunk predicted change.
+        y_pred = split_df[current_col].to_numpy() + alpha * model.predict(X)
 
-        baseline_pred = persistence_baseline(split_df[target_cfg["current_col"]], baseline_fallback)
+        baseline_pred = persistence_baseline(split_df[current_col], baseline_fallback)
         model_metrics = metric_dict(y, y_pred)
         baseline_metrics = metric_dict(y, baseline_pred)
 
