@@ -71,6 +71,7 @@ THESIS_STATUS_PATH = PROJECT_ROOT / "notes" / "thesis_outline_status.md"
 st.set_page_config(
     page_title="Wastewater Odor Analytics Dashboard",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(APP_STYLE, unsafe_allow_html=True)
