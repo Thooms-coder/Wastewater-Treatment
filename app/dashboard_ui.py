@@ -26,20 +26,20 @@ APP_STYLE = """
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg: #f1efe9;
-    --panel: rgba(255, 255, 255, 0.58);
-    --panel-strong: rgba(255, 255, 255, 0.78);
-    --ink: #18231f;
-    --muted: #5d6b66;
-    --line: rgba(24, 35, 31, 0.1);
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-strong: #ffffff;
+    --ink: #0f172a;
+    --muted: #667085;
+    --line: #e5e7eb;
     --accent: #1f6a53;
-    --accent-soft: rgba(31, 106, 83, 0.12);
-    --warn: #8b5e1a;
-    --shadow: 0 22px 48px rgba(24, 33, 30, 0.14);
-    --shadow-soft: 0 12px 28px rgba(24, 33, 30, 0.08);
-    --shadow-deep: 0 26px 60px rgba(18, 27, 24, 0.18);
+    --accent-soft: rgba(31, 106, 83, 0.10);
+    --warn: #b45309;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
+    --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --shadow-deep: 0 4px 12px rgba(16, 24, 40, 0.10);
     --highlight: rgba(255, 255, 255, 0.72);
-    --radius: 20px;
+    --radius: 14px;
 }
 
 html, body, [class*="css"]  {
@@ -851,6 +851,127 @@ div[data-testid="stMarkdownContainer"] p code {
         box-shadow: none !important;
         break-inside: avoid;
     }
+}
+/* =====================================================================
+   MODERN CLEAN / LIGHT overrides (appended last so they win the cascade)
+   ===================================================================== */
+
+/* Flat page background */
+.stApp {
+    background: var(--bg) !important;
+}
+.block-container { max-width: 1240px; }
+
+/* Kill glassy gradient highlight strips */
+[data-testid="stMetric"]::before,
+.app-hero::before, .context-panel::before, .section-intro::before,
+.summary-card::before, .executive-card::before, .report-card::before {
+    content: none !important;
+}
+
+/* Every surface -> solid white, hairline border, subtle shadow, no blur */
+.app-hero, .context-panel, .section-intro, .summary-card, .executive-card,
+.report-card, [data-testid="stMetric"], [data-testid="stPlotlyChart"],
+[data-testid="stDataFrame"], [data-testid="stExpander"] {
+    background: var(--panel) !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.app-hero { border-radius: 18px !important; padding: 1.4rem 1.5rem !important; }
+.app-title { font-size: 1.9rem; letter-spacing: -0.01em; }
+.summary-card:hover, .executive-card:hover, .report-card:hover {
+    transform: none !important;
+    border-color: rgba(31, 106, 83, 0.35) !important;
+    box-shadow: var(--shadow-deep) !important;
+}
+
+/* KPI metric tiles: big number, small muted uppercase label */
+[data-testid="stMetric"] { padding: 1rem 1.1rem !important; }
+[data-testid="stMetricLabel"] {
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 0.7rem !important; font-weight: 700; color: var(--muted) !important;
+}
+[data-testid="stMetricValue"] {
+    font-size: 1.9rem !important; font-weight: 700; color: var(--ink) !important;
+    letter-spacing: -0.01em;
+}
+
+/* Pills -> flat chips */
+.status-pill, .metric-pill {
+    background: var(--accent-soft) !important;
+    border: 1px solid rgba(31, 106, 83, 0.18) !important;
+    box-shadow: none !important;
+}
+
+/* Keep the executive callout as a solid green accent block on white */
+.context-panel.executive {
+    background: linear-gradient(135deg, #16463a 0%, #1f6a53 100%) !important;
+    border: none !important;
+    box-shadow: var(--shadow-deep) !important;
+}
+
+/* Amber note block, flattened */
+.page-note {
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+    border-left: 4px solid var(--warn) !important;
+    box-shadow: none !important;
+}
+
+/* Charts/tables: tighten inner padding so the white frame reads as one card */
+[data-testid="stPlotlyChart"] > div { border-radius: var(--radius); overflow: hidden; }
+
+/* ---- Sidebar: modern flat dark rail (keeps existing light text) ---- */
+[data-testid="stSidebar"] {
+    background: #0f172a !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow: none !important;
+}
+/* Nav radio -> clean full-width rows, accent on the active one */
+[data-testid="stSidebar"] [role="radiogroup"] { gap: 0.15rem; }
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    padding: 0.5rem 0.7rem; border-radius: 10px; margin: 0;
+    transition: background 120ms ease;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+    background: rgba(255,255,255,0.06);
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+    background: var(--accent);
+}
+[data-testid="stSidebar"] [role="radiogroup"] label p {
+    color: rgba(237, 246, 241, 0.92) !important; font-weight: 600;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {
+    color: #ffffff !important; font-weight: 700;
+}
+[data-testid="stSidebar"] [role="radiogroup"] input { accent-color: var(--accent); }
+
+/* Sidebar inputs (select / date): dark surface + light text when closed */
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="input"] > div,
+[data-testid="stSidebar"] [data-baseweb="base-input"] > div {
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.20) !important;
+}
+[data-testid="stSidebar"] [data-baseweb="input"] input,
+[data-testid="stSidebar"] [data-baseweb="base-input"] input {
+    color: #f7fbf8 !important; -webkit-text-fill-color: #f7fbf8 !important;
+}
+/* Baseweb popovers (dropdown menu + calendar) render on WHITE -> force dark text
+   so options aren't white-on-white. These are portaled to <body>, hence global. */
+[data-baseweb="popover"], [data-baseweb="menu"], [data-baseweb="calendar"],
+[data-baseweb="popover"] li, [data-baseweb="menu"] li,
+[data-baseweb="popover"] div, [data-baseweb="calendar"] div {
+    color: #0f172a !important; -webkit-text-fill-color: #0f172a !important;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) [data-baseweb="radio"] div:first-child {
+    background: #ffffff !important; border-color: #ffffff !important;
 }
 </style>
 """
