@@ -122,7 +122,9 @@ def build_events_table(df):
     records += detect_transitions(df, "hcl_available", "HCl")
     records += detect_transitions(df, "ferric_available", "Ferric")
 
-    events = pd.DataFrame(records).sort_values("timestamp")
+    events = pd.DataFrame(records)
+    if not events.empty:
+        events = events.sort_values("timestamp").reset_index(drop=True)
 
     return events
 

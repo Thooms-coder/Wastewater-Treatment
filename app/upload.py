@@ -15,6 +15,7 @@ Secrets required (Streamlit -> Settings -> Secrets):
 """
 
 import base64
+import hmac
 import os
 
 import requests
@@ -71,7 +72,11 @@ def render_upload_page(ctx=None):
         )
         return
 
-    if password and st.text_input("Password", type="password") != password:
+    # Fail closed: no configured password means no safe way to gate writes.
+    if not password:
+        st.error("Upload is disabled: set `upload_password` in the app's secrets.")
+        return
+    if not hmac.compare_digest(st.text_input("Password", type="password"), password):
         st.info("Enter the upload password to continue.")
         return
 
