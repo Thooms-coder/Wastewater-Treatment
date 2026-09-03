@@ -15,12 +15,24 @@ Secrets required (Streamlit -> Settings -> Secrets):
 """
 
 import base64
+import os
 
 import requests
 import streamlit as st
 
 RAW_DIR = "data/raw"
 API = "https://api.github.com"
+ALLOWED_EXT = {".csv", ".xlsx"}
+
+
+def _safe_name(name):
+    """Basename only + allowlisted extension — the filename is attacker-controlled
+    and lands in a repo path, so never let it escape data/raw/."""
+    base = os.path.basename(str(name)).lstrip(".") or "upload"
+    ext = os.path.splitext(base)[1].lower()
+    if ext not in ALLOWED_EXT:
+        return None
+    return base
 
 
 def _cfg():
@@ -74,9 +86,14 @@ def render_upload_page(ctx=None):
         progress = st.progress(0.0)
         failed = False
         for i, f in enumerate(files, 1):
+            name = _safe_name(f.name)
+            if name is None:
+                st.error(f"✗ {f.name}: only {', '.join(sorted(ALLOWED_EXT))} files are allowed")
+                progress.progress(i / len(files))
+                continue
             try:
-                _commit_file(token, repo, branch, f"{RAW_DIR}/{f.name}", f.getvalue(), f"Add raw data: {f.name}")
-                st.write(f"✓ {f.name}")
+                _commit_file(token, repo, branch, f"{RAW_DIR}/{name}", f.getvalue(), f"Add raw data: {name}")
+                st.write(f"✓ {name}")
             except Exception as exc:  # surface the GitHub error to the operator
                 failed = True
                 st.error(f"✗ {f.name}: {exc}")
@@ -89,7 +106,12 @@ def render_upload_page(ctx=None):
 
 
 if __name__ == "__main__":
-    # ponytail: thin API glue; only pure bit worth checking is the encoding.
+    # ponytail: thin API glue; check the encoding and the security-critical name guard.
     blob = b"time,ppm\n1,2\n"
     assert base64.b64decode(base64.b64encode(blob).decode()) == blob
+    assert _safe_name("H2S-1.csv") == "H2S-1.csv"
+    assert _safe_name("../../.github/workflows/rebuild.yml") is None   # bad ext, and basename'd
+    assert _safe_name("/etc/passwd") is None
+    assert _safe_name("a/b/c.xlsx") == "c.xlsx"                        # no path escape
+    assert _safe_name("evil.py") is None                              # not allowlisted
     print("ok")
