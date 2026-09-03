@@ -1,0 +1,41 @@
+name: Rebuild dashboard data
+
+# Runs whenever raw data changes (e.g. an upload from the app). The pipeline is
+# too memory-heavy for the Streamlit Cloud app process, so the runner does it
+# here and commits the refreshed processed data; Cloud then auto-redeploys.
+# The processed-only commit does not touch data/raw, so it never re-triggers.
+on:
+  push:
+    paths:
+      - "data/raw/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild-data
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Build processed data
+        run: |
+          python -m scripts.build_master
+          python -m scripts.build_daily
+          python -m scripts.build_aggregates
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed
+          git diff --cached --quiet || git commit -m "Rebuild processed data [skip ci]"
+          git push

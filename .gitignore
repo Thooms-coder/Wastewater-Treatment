@@ -25,7 +25,7 @@ venv/
 
 # ==================================================
 
-data/raw/
+# data/raw/ is now tracked so the rebuild Action can reprocess uploads.
 # data/processed/
 # *.parquet
 *.csv

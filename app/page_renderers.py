@@ -49,6 +49,7 @@ PAGE_OPTIONS = [
     "Research Progress",
     "Performance & Coverage",
     "Diagnostics & Data",
+    "Upload Data",
 ]
 
 
@@ -1110,3 +1111,6 @@ def render_page(page, ctx):
         render_performance_coverage_page(ctx)
     elif page == "Diagnostics & Data":
         render_diagnostics_data_page(ctx)
+    elif page == "Upload Data":
+        from app.upload import render_upload_page
+        render_upload_page(ctx)
