@@ -926,6 +926,18 @@ div[data-testid="stMarkdownContainer"] p code {
 /* Charts/tables: tighten inner padding so the white frame reads as one card */
 [data-testid="stPlotlyChart"] > div { border-radius: var(--radius); overflow: hidden; }
 
+/* Pin the sidebar permanently open. Streamlit collapses it by sliding the
+   section off-screen (transform: translateX(-256px)) and shrinking it to 1px;
+   force those back so a collapsed state can never hide it, then hide the toggle.
+   (Overriding the collapsed state is what makes hiding the toggle safe — hiding
+   it alone would strand a sidebar that was already collapsed.) */
+[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: none !important;
+    width: 256px !important;
+    min-width: 256px !important;
+}
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+
 /* ---- Sidebar: modern flat dark rail (keeps existing light text) ---- */
 [data-testid="stSidebar"] {
     background: #0f172a !important;
