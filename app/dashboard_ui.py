@@ -926,9 +926,6 @@ div[data-testid="stMarkdownContainer"] p code {
 /* Charts/tables: tighten inner padding so the white frame reads as one card */
 [data-testid="stPlotlyChart"] > div { border-radius: var(--radius); overflow: hidden; }
 
-/* Pin the sidebar open — hide the collapse control so it can't be minimized. */
-[data-testid="stSidebarCollapseButton"] { display: none !important; }
-
 /* ---- Sidebar: modern flat dark rail (keeps existing light text) ---- */
 [data-testid="stSidebar"] {
     background: #0f172a !important;
