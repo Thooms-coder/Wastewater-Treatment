@@ -16,14 +16,44 @@ Secrets required (Streamlit -> Settings -> Secrets):
 
 import base64
 import hmac
+import io
 import os
 
+import pandas as pd
 import requests
 import streamlit as st
 
 RAW_DIR = "data/raw"
 API = "https://api.github.com"
 ALLOWED_EXT = {".csv", ".xlsx"}
+
+
+def _validate(name, data):
+    """Return an error string if a file the pipeline WILL ingest is malformed,
+    else None. Unknown-named files aren't picked up by any loader, so they pass.
+    Catches bad uploads before they reach the repo and break the rebuild."""
+    lname = name.lower()
+    try:
+        if "h2s" in lname or "nh3" in lname:  # gas sensor export
+            if lname.endswith(".csv"):
+                lines = data.decode("latin-1", "replace").splitlines()[:40]
+                ok = any(l.strip().lower().startswith("time stamp") for l in lines)
+            else:
+                raw = pd.read_excel(io.BytesIO(data), sheet_name=0, header=None, nrows=30, dtype=str)
+                ok = raw.iloc[:, 0].astype(str).str.strip().str.lower().str.startswith("time stamp").any()
+            if not ok:
+                return "no 'Time Stamp' header found"
+        elif lname.startswith("water reclamation") and lname.endswith(".xlsx"):
+            from scripts.load_data import detect_water_header_row
+            raw = pd.read_excel(io.BytesIO(data), header=None, nrows=12)
+            if detect_water_header_row(raw) is None:
+                return "no water flow header row found"
+        elif "chemical treatment__" in lname or "biosolids dewatering" in lname:
+            if "Data" not in pd.ExcelFile(io.BytesIO(data)).sheet_names:
+                return "missing 'Data' sheet"
+    except Exception as exc:
+        return f"could not read file ({exc})"
+    return None
 
 
 def _safe_name(name):
@@ -96,8 +126,15 @@ def render_upload_page(ctx=None):
                 st.error(f"✗ {f.name}: only {', '.join(sorted(ALLOWED_EXT))} files are allowed")
                 progress.progress(i / len(files))
                 continue
+            data = f.getvalue()
+            bad = _validate(name, data)
+            if bad:
+                failed = True
+                st.error(f"✗ {name}: {bad} — not committed")
+                progress.progress(i / len(files))
+                continue
             try:
-                _commit_file(token, repo, branch, f"{RAW_DIR}/{name}", f.getvalue(), f"Add raw data: {name}")
+                _commit_file(token, repo, branch, f"{RAW_DIR}/{name}", data, f"Add raw data: {name}")
                 st.write(f"✓ {name}")
             except Exception as exc:  # surface the GitHub error to the operator
                 failed = True
@@ -119,4 +156,8 @@ if __name__ == "__main__":
     assert _safe_name("/etc/passwd") is None
     assert _safe_name("a/b/c.xlsx") == "c.xlsx"                        # no path escape
     assert _safe_name("evil.py") is None                              # not allowlisted
+    gas_ok = b"Instrument:,X\n" * 8 + b"Time Stamp,NH3 (PPM),ISO time\n1/1/26,0,2026Z\n"
+    assert _validate("NH3-1.csv", gas_ok) is None
+    assert _validate("NH3-1.csv", b"garbage,no,header\n1,2,3\n") == "no 'Time Stamp' header found"
+    assert _validate("random-notes.csv", b"anything") is None          # unknown type -> allowed
     print("ok")

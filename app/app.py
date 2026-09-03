@@ -161,6 +161,15 @@ if master_df is None or master_df.empty:
 
 render_sidebar_resources(master_df, hourly_df, daily_df, monthly_df, weekday_df, start_ts, end_ts, coverage_value)
 
+# Data freshness: latest data + when the processed data was last rebuilt.
+try:
+    _rebuilt = pd.Timestamp(MASTER_1MIN.stat().st_mtime, unit="s").strftime("%b %d, %Y %H:%M")
+    st.sidebar.caption(
+        f"Data through {full_master_df.index.max():%b %d, %Y} · rebuilt {_rebuilt}"
+    )
+except Exception:
+    pass
+
 render_page(
     page,
     {
