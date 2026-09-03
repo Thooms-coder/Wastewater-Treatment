@@ -303,6 +303,8 @@
           }
         }
       },
+      "beats_persistence_on_test": false,
+      "recommended_predictor": "persistence",
       "model_path": "models/nh3_t_plus_60min_hist_gbr.joblib",
       "metrics_path": "models/metadata/nh3_t_plus_60min_metrics.json",
       "predictions_path": "models/predictions/nh3_t_plus_60min_predictions.parquet"
@@ -580,6 +582,8 @@
           }
         }
       },
+      "beats_persistence_on_test": false,
+      "recommended_predictor": "persistence",
       "model_path": "models/h2s_t_plus_60min_hist_gbr.joblib",
       "metrics_path": "models/metadata/h2s_t_plus_60min_metrics.json",
       "predictions_path": "models/predictions/h2s_t_plus_60min_predictions.parquet"

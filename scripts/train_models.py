@@ -217,6 +217,16 @@ def train_target_model(
     metrics_path.write_text(json.dumps(outputs, indent=2))
     pd.concat(predictions_frames, ignore_index=True).to_parquet(predictions_path)
 
+    # Honest verdict: does the trained model actually beat naive persistence on
+    # the held-out (chronological) test set? If not, persistence is the
+    # recommended predictor and the GBR is experimental only.
+    test = outputs["splits"].get("test", {})
+    model_rmse = test.get("model_metrics", {}).get("rmse")
+    base_rmse = test.get("baseline_metrics", {}).get("rmse")
+    beats = model_rmse is not None and base_rmse is not None and model_rmse < base_rmse
+    outputs["beats_persistence_on_test"] = bool(beats)
+    outputs["recommended_predictor"] = "model" if beats else "persistence"
+
     outputs["model_path"] = str(model_path)
     outputs["metrics_path"] = str(metrics_path)
     outputs["predictions_path"] = str(predictions_path)
@@ -260,3 +270,9 @@ if __name__ == "__main__":
                 f"  {split_name}: model rmse={model_rmse:.4f}, baseline rmse={base_rmse:.4f}, "
                 f"model r2={model_r2:.4f}, baseline r2={base_r2:.4f}"
             )
+        verdict = (
+            "MODEL beats persistence"
+            if info["recommended_predictor"] == "model"
+            else "persistence WINS on test — GBR is experimental, not recommended"
+        )
+        print(f"  verdict: {verdict}")
