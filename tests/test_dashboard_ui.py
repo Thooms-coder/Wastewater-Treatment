@@ -16,7 +16,9 @@ from app.dashboard_ui import (
 
 
 class DashboardUiTests(unittest.TestCase):
-    def test_compute_ferric_mgl_series_converts_from_lb_per_day_and_flow(self):
+    def test_compute_ferric_mgl_series_fallback_includes_specific_gravity(self):
+        # No reported value -> fallback uses the plant equation incl. the 1.404
+        # ferric specific-gravity term: mg/L = lbs / (MGD * 8.34 * 1.404).
         index = pd.date_range("2026-01-01", periods=2, freq="D")
         df = pd.DataFrame(
             {
@@ -28,9 +30,25 @@ class DashboardUiTests(unittest.TestCase):
 
         result = compute_ferric_mgL_series(df)
 
-        self.assertAlmostEqual(result.iloc[0], 1.0, places=6)
-        self.assertAlmostEqual(result.iloc[1], 2.0, places=6)
+        self.assertAlmostEqual(result.iloc[0], 1.0 / 1.404, places=6)
+        self.assertAlmostEqual(result.iloc[1], 2.0 / 1.404, places=6)
         self.assertEqual(result.name, "ferric_active_mg_per_L")
+
+    def test_compute_ferric_mgl_series_prefers_plant_reported_value(self):
+        index = pd.date_range("2026-01-01", periods=2, freq="D")
+        df = pd.DataFrame(
+            {
+                "chem_ferric_chloride_totes_applied_at_surge_tank_mg_l": [74.0, 120.0],
+                "ferric_active_lbs_per_day": [220.0, 220.0],
+                "total_gpm": [64.0, 64.0],  # would give a bogus spike if computed
+            },
+            index=index,
+        )
+
+        result = compute_ferric_mgL_series(df)
+
+        self.assertAlmostEqual(result.iloc[0], 74.0, places=6)
+        self.assertAlmostEqual(result.iloc[1], 120.0, places=6)
 
     def test_compute_hcl_mgl_series_fallback_includes_specific_gravity(self):
         # No reported dosage -> fallback uses the plant equation incl. the 1.16

@@ -66,6 +66,7 @@ APP_MASTER_COLUMNS = [
     "hcl_active_lbs_per_day_measured",
     "hcl_active_mg_per_L_reported",
     "hcl_dosage_mg_per_L_measured",
+    "chem_ferric_chloride_totes_applied_at_surge_tank_mg_l",
     "daily_report_features_available",
     "bio_centrate_ph_su",
     "bio_centrate_alkalinity_mg_l",

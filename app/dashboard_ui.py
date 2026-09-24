@@ -1440,21 +1440,39 @@ def render_research_alignment():
     st.dataframe(build_research_alignment_df(), use_container_width=True, height=260)
 
 
+# Plant-reported ferric dose intensity (mg/L) from the Chemical Treatment form.
+FERRIC_REPORTED_MGL_COL = "chem_ferric_chloride_totes_applied_at_surge_tank_mg_l"
+
+
 def compute_ferric_mgL_series(df):
+    """Ferric dose intensity (mg/L).
+
+    Same flow-basis issue as HCl (see compute_hcl_mgL_series): dividing active
+    lb/day by total_gpm (west+east sludge out) instead of the total transfer to
+    the surge tank yields wrong values with extreme divide-by-tiny-flow spikes.
+    Prefer the plant-reported mg/L from the Chemical Treatment form.
+    """
     if df is None or df.empty:
         return pd.Series(dtype=float, name="ferric_active_mg_per_L")
-    required = {"ferric_active_lbs_per_day", "total_gpm"}
-    if not required.issubset(df.columns):
-        return pd.Series(dtype=float, index=df.index, name="ferric_active_mg_per_L")
 
-    mgd = df["total_gpm"] * 1440 / 1_000_000
-    mgl = [
-        mgL_from_lbs_per_day(lbs, flow_mgd)
-        if pd.notna(lbs) and pd.notna(flow_mgd) and flow_mgd > 0
-        else np.nan
-        for lbs, flow_mgd in zip(df["ferric_active_lbs_per_day"], mgd)
-    ]
-    return pd.Series(mgl, index=df.index, name="ferric_active_mg_per_L")
+    if FERRIC_REPORTED_MGL_COL in df.columns and df[FERRIC_REPORTED_MGL_COL].notna().any():
+        return df[FERRIC_REPORTED_MGL_COL].astype(float).rename("ferric_active_mg_per_L")
+
+    # Fallback estimate (no reported value): plant equation incl. specific gravity.
+    if {"ferric_active_lbs_per_day", "total_gpm"}.issubset(df.columns):
+        sg = 1.404
+        if "ferric_specific_gravity" in df.columns and df["ferric_specific_gravity"].notna().any():
+            sg = float(df["ferric_specific_gravity"].dropna().iloc[0])
+        mgd = df["total_gpm"] * 1440 / 1_000_000
+        mgl = [
+            lbs / (flow_mgd * 8.34 * sg)
+            if pd.notna(lbs) and pd.notna(flow_mgd) and flow_mgd > 0
+            else np.nan
+            for lbs, flow_mgd in zip(df["ferric_active_lbs_per_day"], mgd)
+        ]
+        return pd.Series(mgl, index=df.index, name="ferric_active_mg_per_L")
+
+    return pd.Series(dtype=float, index=df.index, name="ferric_active_mg_per_L")
 
 
 def compute_hcl_mgL_series(df):
