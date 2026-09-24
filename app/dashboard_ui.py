@@ -1458,20 +1458,42 @@ def compute_ferric_mgL_series(df):
 
 
 def compute_hcl_mgL_series(df):
+    """HCl dose intensity (mg/L).
+
+    Per Phillip (plant operator), the correct HCl mg/L is computed on the daily
+    form as:
+        mg/L = (delivered_lbs * 0.32) / ( (gal_to_surge_tank / 1e6) * 8.34 * 1.16 )
+    using the TOTAL transfer to the surge tank (sum of digesters #8-#14), not the
+    west+east sludge-out streams the app tracks as total_gpm. Our flow is ~6x
+    smaller, so a value computed here comes out ~5-6x too high (~2000 vs the true
+    ~300-600 mg/L). We already ingest the plant's own reported mg/L from the
+    Chemical Treatment form, so use that authoritative value.
+    """
     if df is None or df.empty:
         return pd.Series(dtype=float, name="hcl_active_mg_per_L")
-    required = {"hcl_active_lbs_per_day", "total_gpm"}
-    if not required.issubset(df.columns):
-        return pd.Series(dtype=float, index=df.index, name="hcl_active_mg_per_L")
 
-    mgd = df["total_gpm"] * 1440 / 1_000_000
-    mgl = [
-        mgL_from_lbs_per_day(lbs, flow_mgd)
-        if pd.notna(lbs) and pd.notna(flow_mgd) and flow_mgd > 0
-        else np.nan
-        for lbs, flow_mgd in zip(df["hcl_active_lbs_per_day"], mgd)
-    ]
-    return pd.Series(mgl, index=df.index, name="hcl_active_mg_per_L")
+    for col in ("hcl_active_mg_per_L_reported", "hcl_dosage_mg_per_L_measured"):
+        if col in df.columns and df[col].notna().any():
+            return df[col].astype(float).rename("hcl_active_mg_per_L")
+
+    # No reported value available: fall back to the plant equation (incl. the
+    # 1.16 specific-gravity term). NOTE: still uses total_gpm as the flow proxy,
+    # which understates the surge-tank transfer, so this fallback is only a rough
+    # estimate for periods without a reported dosage.
+    if {"hcl_active_lbs_per_day", "total_gpm"}.issubset(df.columns):
+        sg = 1.16
+        if "hcl_specific_gravity" in df.columns and df["hcl_specific_gravity"].notna().any():
+            sg = float(df["hcl_specific_gravity"].dropna().iloc[0])
+        mgd = df["total_gpm"] * 1440 / 1_000_000
+        mgl = [
+            lbs / (flow_mgd * 8.34 * sg)
+            if pd.notna(lbs) and pd.notna(flow_mgd) and flow_mgd > 0
+            else np.nan
+            for lbs, flow_mgd in zip(df["hcl_active_lbs_per_day"], mgd)
+        ]
+        return pd.Series(mgl, index=df.index, name="hcl_active_mg_per_L")
+
+    return pd.Series(dtype=float, index=df.index, name="hcl_active_mg_per_L")
 
 
 def build_chemistry_review_table(df):

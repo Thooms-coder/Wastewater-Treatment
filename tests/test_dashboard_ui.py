@@ -32,7 +32,9 @@ class DashboardUiTests(unittest.TestCase):
         self.assertAlmostEqual(result.iloc[1], 2.0, places=6)
         self.assertEqual(result.name, "ferric_active_mg_per_L")
 
-    def test_compute_hcl_mgl_series_handles_missing_or_zero_flow(self):
+    def test_compute_hcl_mgl_series_fallback_includes_specific_gravity(self):
+        # No reported dosage -> fallback uses the plant equation incl. the 1.16
+        # HCl specific-gravity term: mg/L = lbs / (MGD * 8.34 * 1.16).
         index = pd.date_range("2026-01-01", periods=3, freq="D")
         df = pd.DataFrame(
             {
@@ -44,9 +46,27 @@ class DashboardUiTests(unittest.TestCase):
 
         result = compute_hcl_mgL_series(df)
 
-        self.assertAlmostEqual(result.iloc[0], 1.0, places=6)
+        self.assertAlmostEqual(result.iloc[0], 1.0 / 1.16, places=6)
         self.assertTrue(math.isnan(result.iloc[1]))
         self.assertTrue(math.isnan(result.iloc[2]))
+
+    def test_compute_hcl_mgl_series_prefers_plant_reported_value(self):
+        # When the plant-reported HCl dosage is present it is authoritative and
+        # is used verbatim (not recomputed from flow).
+        index = pd.date_range("2026-01-01", periods=2, freq="D")
+        df = pd.DataFrame(
+            {
+                "hcl_active_mg_per_L_reported": [360.0, 452.0],
+                "hcl_active_lbs_per_day": [6180.0, 6180.0],
+                "total_gpm": [64.0, 64.0],  # would give a bogus ~2000 if computed
+            },
+            index=index,
+        )
+
+        result = compute_hcl_mgL_series(df)
+
+        self.assertAlmostEqual(result.iloc[0], 360.0, places=6)
+        self.assertAlmostEqual(result.iloc[1], 452.0, places=6)
 
     def test_build_chemistry_review_table_reports_available_hcl_features(self):
         df = pd.DataFrame(

@@ -568,7 +568,7 @@ def render_chemistry_dosing_page(ctx):
             "Dose And Odor Timeline",
             "This chart is the first step toward the optimization workflow described in the notes: compare chemistry dose intensity, odor response, and operating load inside the same window.",
         )
-        render_help_tip("Dose intensity is presented in mg/L first because that is the clearest engineering concentration view. `lb/day` remains available as secondary feed-rate context. `ferric_active_mg_per_L` and `hcl_active_mg_per_L` are computed from active lb/day and flow-derived MGD using the standard 8.34 conversion. If a few dose spikes flatten the chart, switch axis scaling to `Focused`.")
+        render_help_tip("Dose intensity is presented in mg/L first because that is the clearest engineering concentration view. `lb/day` remains available as secondary feed-rate context. `hcl_active_mg_per_L` uses the plant-reported daily HCl dosage from the Chemical Treatment form — (delivered lb × 0.32) ÷ (MGD transferred to surge tank × 8.34 × 1.16) — which is the authoritative value. `ferric_active_mg_per_L` is still computed from active lb/day and flow-derived MGD (standard 8.34 conversion). If a few dose spikes flatten the chart, switch axis scaling to `Focused`.")
         chemistry_plot_options = [
             c for c in [
                 NH3, H2S,
