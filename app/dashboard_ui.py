@@ -975,12 +975,23 @@ div[data-testid="stMarkdownContainer"] p code {
 [data-testid="stSidebar"] [data-baseweb="base-input"] input {
     color: #f7fbf8 !important; -webkit-text-fill-color: #f7fbf8 !important;
 }
-/* Baseweb popovers (dropdown menu + calendar) render on WHITE -> force dark text
-   so options aren't white-on-white. These are portaled to <body>, hence global. */
-[data-baseweb="popover"], [data-baseweb="menu"], [data-baseweb="calendar"],
-[data-baseweb="popover"] li, [data-baseweb="menu"] li,
-[data-baseweb="popover"] div, [data-baseweb="calendar"] div {
-    color: #0f172a !important; -webkit-text-fill-color: #0f172a !important;
+/* Dropdown menus + date-picker calendars (portaled to <body>). Pin them to the
+   light scheme: white surface AND dark text. Setting the background too — not
+   just the text — prevents the dark-on-dark "black dropdown" regression. Scoped
+   to the menu list / options / calendar cells so it can't recolor other popovers. */
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="menu"],
+[data-baseweb="menu"] ul,
+[data-baseweb="calendar"] {
+    background-color: #ffffff !important;
+}
+[data-baseweb="popover"] [role="option"],
+[data-baseweb="popover"] li,
+[data-baseweb="menu"] li,
+[data-baseweb="calendar"] [role="gridcell"],
+[data-baseweb="calendar"] button {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
 }
 [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) [data-baseweb="radio"] div:first-child {
     background: #ffffff !important; border-color: #ffffff !important;
